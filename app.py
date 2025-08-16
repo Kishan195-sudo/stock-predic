@@ -134,7 +134,7 @@ except ImportError:
     st.warning("⚠️ yfinance not installed. Only Alpha Vantage will be used.")
 
 # Alpha Vantage Configuration
-ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY", "RSMSPEMM4AQHT6QL")  # Use environment variable in production
+ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY"," U6C4TOUUYCXNM53B")  # Use environment variable in production
 AV_BASE_URL = 'https://www.alphavantage.co/query'
 
 # Enhanced US stock tickers

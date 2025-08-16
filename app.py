@@ -1,20 +1,24 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
-import requests
+import os
 import time
+import requests
+import warnings
+from datetime import datetime, timedelta
+
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import warnings
 
 warnings.filterwarnings('ignore')
 
-# Page configuration (first Streamlit call)
+# -----------------------------------------------------------------------------
+# Streamlit Page Config
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="US StockAI Predictor Pro",
     page_icon="🇺🇸",
@@ -22,11 +26,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Clean US Theme CSS
+# -----------------------------------------------------------------------------
+# Custom CSS (US theme + welcome banner)
+# -----------------------------------------------------------------------------
 st.markdown("""
     <style>
         /* Import Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
         /* Headers and Text */
         .main-header {
@@ -46,8 +52,20 @@ st.markdown("""
             text-align: center;
             font-size: 1.2rem;
             color: #4a4a4a;
-            margin-bottom: 2rem;
+            margin-bottom: 1.0rem;
             font-weight: 400;
+        }
+
+        .welcome-banner {
+            text-align: center;
+            margin: 0.75rem auto 2rem auto;
+            padding: 0.75rem 1rem;
+            font-weight: 700;
+            color: #0B5394;
+            border: 1px solid rgba(11,83,148,0.25);
+            border-radius: 10px;
+            background: linear-gradient(90deg, rgba(11,83,148,0.08), rgba(214,40,40,0.08));
+            max-width: 900px;
         }
 
         /* Status Indicators */
@@ -125,19 +143,29 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Try to import yfinance
+# -----------------------------------------------------------------------------
+# Optional yfinance availability (for API status check only)
+# -----------------------------------------------------------------------------
 try:
     import yfinance as yf
     YFINANCE_AVAILABLE = True
 except ImportError:
     YFINANCE_AVAILABLE = False
-    st.warning("⚠️ yfinance not installed. Only Alpha Vantage will be used.")
+    st.warning("⚠️ yfinance not installed. Only Alpha Vantage will be used for data.")
 
-# Alpha Vantage Configuration
-ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY"," U6C4TOUUYCXNM53B")  # Use environment variable in production
-AV_BASE_URL = 'https://www.alphavantage.co/query'
+# -----------------------------------------------------------------------------
+# Alpha Vantage Configuration (supports secrets and env vars)
+# -----------------------------------------------------------------------------
+ALPHA_VANTAGE_API_KEY = (
+    st.secrets.get("ALPHA_VANTAGE_API_KEY")
+    or os.getenv("ALPHA_VANTAGE_API_KEY")
+    or "U6C4TOUUYCXNM53B"  # Fallback key for immediate testing; replace in production
+)
+AV_BASE_URL = "https://www.alphavantage.co/query"
 
-# Enhanced US stock tickers
+# -----------------------------------------------------------------------------
+# US Stock Ticker Presets
+# -----------------------------------------------------------------------------
 RELIABLE_TICKERS_US = {
     "AAPL": "Apple Inc.",
     "GOOGL": "Alphabet Inc.",
@@ -156,11 +184,27 @@ RELIABLE_TICKERS_US = {
     "HD": "Home Depot"
 }
 
+# -----------------------------------------------------------------------------
+# Utilities
+# -----------------------------------------------------------------------------
+def normalize_symbol_for_alpha_vantage(ticker: str) -> str:
+    """
+    Normalize user-entered ticker for Alpha Vantage.
+    - Alpha Vantage typically uses a dot for class shares (e.g., BRK.B)
+    - Users might enter BRK-B, which we convert to BRK.B for AV
+    """
+    t = (ticker or "").strip()
+    # Preserve case for display elsewhere, but AV accepts uppercase as well
+    # Replace hyphen with dot for class shares
+    if "-" in t and "." not in t:
+        t = t.replace("-", ".")
+    return t
+
 def test_api_connections():
     """Test both API connections and return status"""
     status = {
-        'yfinance': {'available': YFINANCE_AVAILABLE, 'working': False, 'message': ""},
-        'alpha_vantage': {'available': True, 'working': False, 'message': ""}
+        "yfinance": {"available": YFINANCE_AVAILABLE, "working": False, "message": ""},
+        "alpha_vantage": {"available": True, "working": False, "message": ""},
     }
 
     # Test yfinance
@@ -169,99 +213,110 @@ def test_api_connections():
             test_stock = yf.Ticker("AAPL")
             test_data = test_stock.history(period="5d")
             if not test_data.empty:
-                status['yfinance']['working'] = True
-                status['yfinance']['message'] = "✅ yfinance is working"
+                status["yfinance"]["working"] = True
+                status["yfinance"]["message"] = "✅ yfinance is working"
             else:
-                status['yfinance']['message'] = "❌ yfinance returned no data"
+                status["yfinance"]["message"] = "❌ yfinance returned no data"
         except Exception as e:
-            status['yfinance']['message'] = f"❌ yfinance error: {str(e)[:50]}..."
+            status["yfinance"]["message"] = f"❌ yfinance error: {str(e)[:50]}..."
     else:
-        status['yfinance']['message'] = "❌ yfinance not installed"
+        status["yfinance"]["message"] = "❌ yfinance not installed"
 
     # Test Alpha Vantage
     try:
         params = {
-            'function': 'TIME_SERIES_DAILY',
-            'symbol': 'AAPL',
-            'apikey': ALPHA_VANTAGE_API_KEY,
-            'outputsize': 'compact'
+            "function": "TIME_SERIES_DAILY",
+            "symbol": "AAPL",
+            "apikey": ALPHA_VANTAGE_API_KEY,
+            "outputsize": "compact",
         }
         response = requests.get(AV_BASE_URL, params=params, timeout=15)
         data = response.json()
 
-        if 'Time Series (Daily)' in data:
-            status['alpha_vantage']['working'] = True
-            status['alpha_vantage']['message'] = "✅ Alpha Vantage is working"
-        elif 'Note' in data or 'Information' in data:
-            status['alpha_vantage']['message'] = "⚠️ Alpha Vantage rate limit may be exceeded"
-        elif 'Error Message' in data:
-            status['alpha_vantage']['message'] = f"❌ Alpha Vantage error: {data['Error Message']}"
+        if "Time Series (Daily)" in data:
+            status["alpha_vantage"]["working"] = True
+            status["alpha_vantage"]["message"] = "✅ Alpha Vantage is working"
+        elif "Note" in data or "Information" in data:
+            status["alpha_vantage"]["message"] = "⚠️ Alpha Vantage rate limit may be exceeded"
+        elif "Error Message" in data:
+            status["alpha_vantage"]["message"] = f"❌ Alpha Vantage error: {data['Error Message']}"
         else:
-            status['alpha_vantage']['message'] = "❌ Unknown Alpha Vantage response"
+            status["alpha_vantage"]["message"] = "❌ Unknown Alpha Vantage response"
     except Exception as e:
-        status['alpha_vantage']['message'] = f"❌ Alpha Vantage connection failed: {str(e)[:50]}..."
+        status["alpha_vantage"]["message"] = f"❌ Alpha Vantage connection failed: {str(e)[:50]}..."
 
     return status
 
+def get_period_days(period):
+    """Convert period string to number of days"""
+    period_map = {
+        "1mo": 30,
+        "3mo": 90,
+        "6mo": 180,
+        "1y": 365,
+        "2y": 730,
+        "5y": 1825,
+    }
+    return period_map.get(period, 365)
+
 @st.cache_data(ttl=300)
-def fetch_stock_data_unified(ticker, period="1y"):
-    """Fetch stock data from Alpha Vantage with fallback to sample data"""
+def fetch_stock_data_unified(display_ticker, period="1y"):
+    """
+    Fetch stock data from Alpha Vantage with fallback to sample data.
+    display_ticker: what the user selected/typed (kept for display)
+    """
     try:
+        # Normalize ticker for Alpha Vantage
+        av_ticker = normalize_symbol_for_alpha_vantage(display_ticker)
+
         # Respect Alpha Vantage free tier rate limits
         time.sleep(1)
 
         params = {
-            'function': 'TIME_SERIES_DAILY',
-            'symbol': ticker,
-            'apikey': ALPHA_VANTAGE_API_KEY,
-            'outputsize': 'full',
-            'datatype': 'json'
+            "function": "TIME_SERIES_DAILY",
+            "symbol": av_ticker,
+            "apikey": ALPHA_VANTAGE_API_KEY,
+            "outputsize": "full",
+            "datatype": "json",
         }
 
         response = requests.get(AV_BASE_URL, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
 
-        if 'Error Message' in data:
-            raise Exception(data['Error Message'])
+        if "Error Message" in data:
+            raise Exception(data["Error Message"])
 
-        if 'Time Series (Daily)' not in data:
+        if "Time Series (Daily)" not in data:
             raise Exception("No data found in response")
 
         # Convert to DataFrame (explicitly rename columns for safety)
-        raw_df = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+        raw_df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index")
         rename_map = {
-            '1. open': 'Open',
-            '2. high': 'High',
-            '3. low': 'Low',
-            '4. close': 'Close',
-            '5. volume': 'Volume'
+            "1. open": "Open",
+            "2. high": "High",
+            "3. low": "Low",
+            "4. close": "Close",
+            "5. volume": "Volume",
         }
         raw_df = raw_df.rename(columns=rename_map)
-        expected_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+        expected_cols = ["Open", "High", "Low", "Close", "Volume"]
         df = raw_df[expected_cols].astype(float)
         df.index = pd.to_datetime(df.index)
-        df = df.sort_index().reset_index().rename(columns={'index': 'Date'})
+        df = df.sort_index().reset_index().rename(columns={"index": "Date"})
 
         # Filter for requested period
         days = get_period_days(period)
         start_date = datetime.now() - timedelta(days=days)
-        df = df[df['Date'] >= start_date]
+        df = df[df["Date"] >= start_date]
 
-        df.attrs['source'] = 'alpha_vantage'
+        df.attrs["source"] = "alpha_vantage"
+        df.attrs["av_symbol_used"] = av_ticker
         return df
 
     except Exception as e:
         st.warning(f"Alpha Vantage API error: {str(e)}. Using sample data.")
-        return create_sample_data(ticker, period)
-
-def get_period_days(period):
-    """Convert period string to number of days"""
-    period_map = {
-        '1mo': 30, '3mo': 90, '6mo': 180,
-        '1y': 365, '2y': 730, '5y': 1825
-    }
-    return period_map.get(period, 365)
+        return create_sample_data(display_ticker, period)
 
 def create_sample_data(ticker, period):
     """Create realistic sample data when APIs fail"""
@@ -269,18 +324,18 @@ def create_sample_data(ticker, period):
 
     # Base prices for US stocks
     base_prices = {
-        'AAPL': 180, 'GOOGL': 140, 'MSFT': 330, 'TSLA': 250,
-        'AMZN': 140, 'META': 300, 'NVDA': 450, 'NFLX': 400,
-        'JPM': 150, 'V': 260, 'BRK-B': 400, 'UNH': 500, 'XOM': 110,
-        'PG': 160, 'HD': 350
+        "AAPL": 180, "GOOGL": 140, "MSFT": 330, "TSLA": 250,
+        "AMZN": 140, "META": 300, "NVDA": 450, "NFLX": 400,
+        "JPM": 150, "V": 260, "BRK-B": 400, "UNH": 500, "XOM": 110,
+        "PG": 160, "HD": 350
     }
 
-    base_name = ticker.split('.')[0].upper()
+    base_name = ticker.split(".")[0].upper()
     base_price = base_prices.get(base_name, 100)
 
     # Generate realistic data
     np.random.seed(hash(ticker) % 2**32)
-    dates = pd.date_range(end=datetime.now(), periods=days, freq='B')
+    dates = pd.date_range(end=datetime.now(), periods=days, freq="B")
 
     # Generate price movements
     daily_return = 0.08 / 252
@@ -303,7 +358,7 @@ def create_sample_data(ticker, period):
             open_price = close_price
         else:
             gap = np.random.normal(0, 0.005)
-            open_price = prices[i-1] * (1 + gap)
+            open_price = prices[i - 1] * (1 + gap)
 
         intraday_range = abs(np.random.normal(0, daily_vol))
         high = max(open_price, close_price) * (1 + intraday_range)
@@ -316,16 +371,16 @@ def create_sample_data(ticker, period):
         volume = int(np.random.lognormal(np.log(base_volume), 0.8))
 
         data.append({
-            'Date': dates[i],
-            'Open': round(open_price, 2),
-            'High': round(high, 2),
-            'Low': round(low, 2),
-            'Close': round(close_price, 2),
-            'Volume': volume
+            "Date": dates[i],
+            "Open": round(open_price, 2),
+            "High": round(high, 2),
+            "Low": round(low, 2),
+            "Close": round(close_price, 2),
+            "Volume": volume,
         })
 
     df = pd.DataFrame(data)
-    df.attrs = {'source': 'sample_data', 'ticker': ticker}
+    df.attrs = {"source": "sample_data", "ticker": ticker}
     return df
 
 def calculate_rsi(prices, window=14):
@@ -343,28 +398,28 @@ def process_stock_data(df, ticker, source):
         return None
 
     # Ensure Date column exists
-    if 'Date' not in df.columns and df.index.name == 'Date':
+    if "Date" not in df.columns and df.index.name == "Date":
         df = df.reset_index()
 
     # Add technical indicators
-    df['MA_20'] = df['Close'].rolling(window=20).mean()
-    df['MA_50'] = df['Close'].rolling(window=50).mean()
-    df['RSI'] = calculate_rsi(df['Close'])
-    df['Price_Change'] = df['Close'].pct_change()
-    df['Volume_MA'] = df['Volume'].rolling(window=10).mean()
+    df["MA_20"] = df["Close"].rolling(window=20).mean()
+    df["MA_50"] = df["Close"].rolling(window=50).mean()
+    df["RSI"] = calculate_rsi(df["Close"])
+    df["Price_Change"] = df["Close"].pct_change()
+    df["Volume_MA"] = df["Volume"].rolling(window=10).mean()
 
     # Add lag features
     for i in [1, 2, 3, 5]:
-        df[f'Close_Lag_{i}'] = df['Close'].shift(i)
+        df[f"Close_Lag_{i}"] = df["Close"].shift(i)
 
     # Remove rows with NaN values
     df = df.dropna()
 
     # Add metadata
     df.attrs = {
-        'source': source,
-        'ticker': ticker,
-        'last_updated': datetime.now()
+        "source": source,
+        "ticker": ticker,
+        "last_updated": datetime.now(),
     }
 
     return df
@@ -372,20 +427,20 @@ def process_stock_data(df, ticker, source):
 def prepare_features(df):
     """Prepare features for machine learning"""
     feature_columns = [
-        'Open', 'High', 'Low', 'Volume', 'MA_20', 'MA_50', 'RSI',
-        'Price_Change', 'Volume_MA'
+        "Open", "High", "Low", "Volume", "MA_20", "MA_50", "RSI",
+        "Price_Change", "Volume_MA"
     ]
 
     # Add lag features
     for i in [1, 2, 3, 5]:
-        if f'Close_Lag_{i}' in df.columns:
-            feature_columns.append(f'Close_Lag_{i}')
+        if f"Close_Lag_{i}" in df.columns:
+            feature_columns.append(f"Close_Lag_{i}")
 
     # Select only existing columns
     existing_features = [col for col in feature_columns if col in df.columns]
 
     X = df[existing_features].copy()
-    y = df['Close'].copy()
+    y = df["Close"].copy()
 
     return X, y, existing_features
 
@@ -423,21 +478,21 @@ def train_model(df):
 
         # Calculate metrics
         metrics = {
-            'train_rmse': np.sqrt(mean_squared_error(y_train, y_train_pred)),
-            'test_rmse': np.sqrt(mean_squared_error(y_test, y_test_pred)),
-            'train_mae': mean_absolute_error(y_train, y_train_pred),
-            'test_mae': mean_absolute_error(y_test, y_test_pred),
-            'train_r2': r2_score(y_train, y_train_pred),
-            'test_r2': r2_score(y_test, y_test_pred),
-            'train_size': len(X_train),
-            'test_size': len(X_test)
+            "train_rmse": float(np.sqrt(mean_squared_error(y_train, y_train_pred))),
+            "test_rmse": float(np.sqrt(mean_squared_error(y_test, y_test_pred))),
+            "train_mae": float(mean_absolute_error(y_train, y_train_pred)),
+            "test_mae": float(mean_absolute_error(y_test, y_test_pred)),
+            "train_r2": float(r2_score(y_train, y_train_pred)),
+            "test_r2": float(r2_score(y_test, y_test_pred)),
+            "train_size": int(len(X_train)),
+            "test_size": int(len(X_test)),
         }
 
         # Feature importance
         feature_importance = pd.DataFrame({
-            'feature': feature_names,
-            'importance': model.feature_importances_
-        }).sort_values('importance', ascending=False)
+            "feature": feature_names,
+            "importance": model.feature_importances_
+        }).sort_values("importance", ascending=False)
 
         return model, scaler, metrics, feature_importance
 
@@ -464,38 +519,42 @@ def predict_next_price(model, scaler, df):
 def get_stock_info(ticker):
     """Get default stock information (US-focused)"""
     stock_info = {
-        'AAPL': {'name': 'Apple Inc.', 'sector': 'Technology', 'industry': 'Consumer Electronics', 'currency': 'USD'},
-        'GOOGL': {'name': 'Alphabet Inc.', 'sector': 'Technology', 'industry': 'Internet Services', 'currency': 'USD'},
-        'MSFT': {'name': 'Microsoft Corporation', 'sector': 'Technology', 'industry': 'Software', 'currency': 'USD'},
-        'TSLA': {'name': 'Tesla Inc.', 'sector': 'Consumer Discretionary', 'industry': 'Auto Manufacturers', 'currency': 'USD'},
-        'AMZN': {'name': 'Amazon.com Inc.', 'sector': 'Consumer Discretionary', 'industry': 'Internet Retail', 'currency': 'USD'},
-        'NVDA': {'name': 'NVIDIA Corporation', 'sector': 'Technology', 'industry': 'Semiconductors', 'currency': 'USD'},
-        'META': {'name': 'Meta Platforms Inc.', 'sector': 'Communication Services', 'industry': 'Social Media', 'currency': 'USD'},
-        'NFLX': {'name': 'Netflix Inc.', 'sector': 'Communication Services', 'industry': 'Entertainment', 'currency': 'USD'},
-        'JPM': {'name': 'JPMorgan Chase & Co.', 'sector': 'Financials', 'industry': 'Banks', 'currency': 'USD'},
-        'V': {'name': 'Visa Inc.', 'sector': 'Financials', 'industry': 'Credit Services', 'currency': 'USD'},
-        'BRK-B': {'name': 'Berkshire Hathaway Inc. Class B', 'sector': 'Financials', 'industry': 'Diversified', 'currency': 'USD'},
-        'UNH': {'name': 'UnitedHealth Group', 'sector': 'Healthcare', 'industry': 'Managed Health Care', 'currency': 'USD'},
-        'XOM': {'name': 'Exxon Mobil Corporation', 'sector': 'Energy', 'industry': 'Oil & Gas', 'currency': 'USD'},
-        'PG': {'name': 'Procter & Gamble', 'sector': 'Consumer Staples', 'industry': 'Household Products', 'currency': 'USD'},
-        'HD': {'name': 'Home Depot', 'sector': 'Consumer Discretionary', 'industry': 'Home Improvement Retail', 'currency': 'USD'}
+        "AAPL": {"name": "Apple Inc.", "sector": "Technology", "industry": "Consumer Electronics", "currency": "USD"},
+        "GOOGL": {"name": "Alphabet Inc.", "sector": "Technology", "industry": "Internet Services", "currency": "USD"},
+        "MSFT": {"name": "Microsoft Corporation", "sector": "Technology", "industry": "Software", "currency": "USD"},
+        "TSLA": {"name": "Tesla Inc.", "sector": "Consumer Discretionary", "industry": "Auto Manufacturers", "currency": "USD"},
+        "AMZN": {"name": "Amazon.com Inc.", "sector": "Consumer Discretionary", "industry": "Internet Retail", "currency": "USD"},
+        "NVDA": {"name": "NVIDIA Corporation", "sector": "Technology", "industry": "Semiconductors", "currency": "USD"},
+        "META": {"name": "Meta Platforms Inc.", "sector": "Communication Services", "industry": "Social Media", "currency": "USD"},
+        "NFLX": {"name": "Netflix Inc.", "sector": "Communication Services", "industry": "Entertainment", "currency": "USD"},
+        "JPM": {"name": "JPMorgan Chase & Co.", "sector": "Financials", "industry": "Banks", "currency": "USD"},
+        "V": {"name": "Visa Inc.", "sector": "Financials", "industry": "Credit Services", "currency": "USD"},
+        "BRK-B": {"name": "Berkshire Hathaway Inc. Class B", "sector": "Financials", "industry": "Diversified", "currency": "USD"},
+        "UNH": {"name": "UnitedHealth Group", "sector": "Healthcare", "industry": "Managed Health Care", "currency": "USD"},
+        "XOM": {"name": "Exxon Mobil Corporation", "sector": "Energy", "industry": "Oil & Gas", "currency": "USD"},
+        "PG": {"name": "Procter & Gamble", "sector": "Consumer Staples", "industry": "Household Products", "currency": "USD"},
+        "HD": {"name": "Home Depot", "sector": "Consumer Discretionary", "industry": "Home Improvement Retail", "currency": "USD"},
     }
 
-    base_ticker = ticker.split('.')[0].upper()
+    base_ticker = ticker.split(".")[0].upper()
     info = stock_info.get(base_ticker, {
-        'name': ticker,
-        'sector': 'Unknown',
-        'industry': 'Unknown',
-        'currency': 'USD'
+        "name": ticker,
+        "sector": "Unknown",
+        "industry": "Unknown",
+        "currency": "USD",
     })
 
-    info['market_cap'] = 'N/A'
+    info["market_cap"] = "N/A"
     return info
 
+# -----------------------------------------------------------------------------
+# Main App
+# -----------------------------------------------------------------------------
 def main():
     # Title and description
     st.markdown('<h1 class="main-header">US StockAI Predictor Pro 🇺🇸</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">US Market Analysis & AI-Powered Prediction Platform</p>', unsafe_allow_html=True)
+    st.markdown('<div class="welcome-banner">WELCOME to the STOCKS world</div>', unsafe_allow_html=True)
 
     # API Status Check
     with st.expander("🔍 API Status Check", expanded=False):
@@ -507,14 +566,14 @@ def main():
 
             with col1:
                 st.subheader("📊 yfinance Status")
-                if api_status['yfinance']['working']:
+                if api_status["yfinance"]["working"]:
                     st.markdown(f'<div class="api-status api-working">{api_status["yfinance"]["message"]}</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="api-status api-failed">{api_status["yfinance"]["message"]}</div>', unsafe_allow_html=True)
 
             with col2:
                 st.subheader("🔑 Alpha Vantage Status")
-                if api_status['alpha_vantage']['working']:
+                if api_status["alpha_vantage"]["working"]:
                     st.markdown('<div class="api-status api-working">✅ Alpha Vantage is working</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="api-status api-failed">{api_status["alpha_vantage"]["message"]}</div>', unsafe_allow_html=True)
@@ -540,12 +599,11 @@ def main():
             selected_stock = st.selectbox("Select Stock", list(RELIABLE_TICKERS_US.keys()))
             ticker = selected_stock
             st.info(f"📊 Selected: {RELIABLE_TICKERS_US[selected_stock]}")
-
         else:  # Custom ticker
             ticker = st.text_input(
                 "Enter US Stock Ticker",
                 value="AAPL",
-                help="Examples: AAPL, MSFT, BRK-B (use hyphen for class shares)"
+                help="Examples: AAPL, MSFT, BRK-B (use hyphen for class shares; we'll handle conversion)"
             )
             if ticker:
                 st.info("🇺🇸 US stock format detected")
@@ -578,7 +636,7 @@ def main():
             "🔮 Predictions",
             "📈 Charts",
             "🤖 Model Performance",
-            "📋 Data Table"
+            "📋 Data Table",
         ])
 
         # Fetch stock data
@@ -590,7 +648,7 @@ def main():
             return
 
         # Process the data
-        data_source = df_raw.attrs.get('source', 'unknown')
+        data_source = df_raw.attrs.get("source", "unknown")
         df = process_stock_data(df_raw.copy(), ticker, data_source)
 
         if df is None or df.empty:
@@ -598,40 +656,40 @@ def main():
             return
 
         # Display data source info
-        if data_source == 'sample_data':
+        if data_source == "sample_data":
             st.warning("⚠️ Using sample data for demonstration. Real-time data unavailable.")
         else:
-            st.success(f"✅ Successfully loaded {len(df)} data points for {ticker} from {data_source}")
+            av_symbol = df_raw.attrs.get("av_symbol_used", ticker)
+            st.success(f"✅ Successfully loaded {len(df)} data points for {ticker} from {data_source} (symbol used: {av_symbol})")
 
         # Get stock info
         stock_info = get_stock_info(ticker)
-        currency = 'USD'
-        currency_symbol = '$'
+        currency_symbol = "$"
 
         with tab1:
             # Stock information
             st.markdown(f"### 📋 {stock_info['name']} ({ticker})")
 
             # Data source indicator
-            if data_source != 'sample_data':
+            if data_source != "sample_data":
                 st.markdown(f'<div class="info-card">📡 Data Source: {data_source.title()}</div>', unsafe_allow_html=True)
 
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
-                current_price = df['Close'].iloc[-1]
+                current_price = df["Close"].iloc[-1]
                 st.metric("Current Price", f"{currency_symbol}{current_price:.2f}")
 
             with col2:
-                price_change = df['Close'].iloc[-1] - df['Close'].iloc[-2] if len(df) > 1 else 0
-                pct_change = (price_change / df['Close'].iloc[-2] * 100) if len(df) > 1 and df['Close'].iloc[-2] != 0 else 0
+                price_change = df["Close"].iloc[-1] - df["Close"].iloc[-2] if len(df) > 1 else 0
+                pct_change = (price_change / df["Close"].iloc[-2] * 100) if len(df) > 1 and df["Close"].iloc[-2] != 0 else 0
                 st.metric("Price Change", f"{currency_symbol}{price_change:.2f}", f"{pct_change:.2f}%")
 
             with col3:
                 st.metric("Volume", f"{df['Volume'].iloc[-1]:,.0f}")
 
             with col4:
-                volatility = df['Close'].pct_change().std() * 100
+                volatility = df["Close"].pct_change().std() * 100
                 st.metric("Volatility (Daily σ)", f"{volatility:.2f}%")
 
             # Stock details
@@ -657,12 +715,12 @@ def main():
                 st.metric("52W Low", f"{currency_symbol}{df['Low'].min():.2f}")
 
             with col3:
-                avg_volume = df['Volume'].mean()
+                avg_volume = df["Volume"].mean()
                 st.metric("Avg Volume", f"{avg_volume:,.0f}")
 
             with col4:
-                if 'RSI' in df.columns and not df['RSI'].isna().all():
-                    current_rsi = df['RSI'].iloc[-1]
+                if "RSI" in df.columns and not df["RSI"].isna().all():
+                    current_rsi = df["RSI"].iloc[-1]
                     st.metric("RSI", f"{current_rsi:.1f}")
 
         with tab2:
@@ -693,7 +751,7 @@ def main():
             next_day_pred = predict_next_price(model, scaler, df)
 
             if next_day_pred is not None:
-                current_price = df['Close'].iloc[-1]
+                current_price = df["Close"].iloc[-1]
                 price_change = next_day_pred - current_price
                 percentage_change = (price_change / current_price) * 100 if current_price != 0 else 0
 
@@ -726,37 +784,37 @@ def main():
             fig = go.Figure()
 
             fig.add_trace(go.Scatter(
-                x=df['Date'],
-                y=df['Close'],
-                mode='lines',
-                name='Close Price',
-                line=dict(color='#0B5394', width=3)
+                x=df["Date"],
+                y=df["Close"],
+                mode="lines",
+                name="Close Price",
+                line=dict(color="#0B5394", width=3)
             ))
 
-            if 'MA_20' in df.columns and not df['MA_20'].isna().all():
+            if "MA_20" in df.columns and not df["MA_20"].isna().all():
                 fig.add_trace(go.Scatter(
-                    x=df['Date'],
-                    y=df['MA_20'],
-                    mode='lines',
-                    name='20-Day MA',
-                    line=dict(color='#D62828', width=2, dash='dash')
+                    x=df["Date"],
+                    y=df["MA_20"],
+                    mode="lines",
+                    name="20-Day MA",
+                    line=dict(color="#D62828", width=2, dash="dash")
                 ))
 
-            if 'MA_50' in df.columns and not df['MA_50'].isna().all():
+            if "MA_50" in df.columns and not df["MA_50"].isna().all():
                 fig.add_trace(go.Scatter(
-                    x=df['Date'],
-                    y=df['MA_50'],
-                    mode='lines',
-                    name='50-Day MA',
-                    line=dict(color='#2ca02c', width=2, dash='dot')
+                    x=df["Date"],
+                    y=df["MA_50"],
+                    mode="lines",
+                    name="50-Day MA",
+                    line=dict(color="#2ca02c", width=2, dash="dot")
                 ))
 
             fig.update_layout(
                 title=f"{ticker} Stock Price with Moving Averages",
                 xaxis_title="Date",
                 yaxis_title=f"Price ({currency_symbol})",
-                hovermode='x unified',
-                template='plotly_white'
+                hovermode="x unified",
+                template="plotly_white"
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -764,49 +822,58 @@ def main():
             # Volume chart
             fig_volume = go.Figure()
             fig_volume.add_trace(go.Bar(
-                x=df['Date'],
-                y=df['Volume'],
-                name='Volume',
-                marker_color='rgba(11, 83, 148, 0.6)'
+                x=df["Date"],
+                y=df["Volume"],
+                name="Volume",
+                marker_color="rgba(11, 83, 148, 0.6)"
             ))
 
             fig_volume.update_layout(
                 title=f"{ticker} Trading Volume",
                 xaxis_title="Date",
                 yaxis_title="Volume",
-                template='plotly_white'
+                template="plotly_white"
             )
 
             st.plotly_chart(fig_volume, use_container_width=True)
 
             # RSI chart
-            if 'RSI' in df.columns and not df['RSI'].isna().all():
+            if "RSI" in df.columns and not df["RSI"].isna().all():
                 fig_rsi = go.Figure()
                 fig_rsi.add_trace(go.Scatter(
-                    x=df['Date'],
-                    y=df['RSI'],
-                    mode='lines',
-                    name='RSI',
-                    line=dict(color='#d62728', width=3)
+                    x=df["Date"],
+                    y=df["RSI"],
+                    mode="lines",
+                    name="RSI",
+                    line=dict(color="#d62728", width=3)
                 ))
 
                 # Add overbought/oversold lines
-                fig_rsi.add_hline(y=70, line_dash="dash", line_color="#D62828", annotation_text="Overbought (70)")
-                fig_rsi.add_hline(y=30, line_dash="dash", line_color="#2ca02c", annotation_text="Oversold (30)")
+                try:
+                    fig_rsi.add_hline(y=70, line_dash="dash", line_color="#D62828", annotation_text="Overbought (70)")
+                    fig_rsi.add_hline(y=30, line_dash="dash", line_color="#2ca02c", annotation_text="Oversold (30)")
+                except Exception:
+                    # Fallback for older Plotly versions using shapes
+                    fig_rsi.update_layout(
+                        shapes=[
+                            dict(type="line", x0=df["Date"].min(), x1=df["Date"].max(), y0=70, y1=70, line=dict(color="#D62828", dash="dash")),
+                            dict(type="line", x0=df["Date"].min(), x1=df["Date"].max(), y0=30, y1=30, line=dict(color="#2ca02c", dash="dash")),
+                        ]
+                    )
 
                 fig_rsi.update_layout(
                     title=f"{ticker} RSI (Relative Strength Index)",
                     xaxis_title="Date",
                     yaxis_title="RSI",
                     yaxis=dict(range=[0, 100]),
-                    template='plotly_white'
+                    template="plotly_white"
                 )
 
                 st.plotly_chart(fig_rsi, use_container_width=True)
 
         with tab4:
             # Model performance details
-            if 'metrics' in locals() and metrics is not None:
+            if "metrics" in locals() and metrics is not None:
                 st.markdown("### 🤖 Model Performance Details")
 
                 # Performance metrics
@@ -828,31 +895,31 @@ def main():
 
                 # Model interpretation
                 st.markdown("### 🎯 Model Interpretation")
-                if metrics['test_r2'] > 0.8:
+                if metrics["test_r2"] > 0.8:
                     st.success("🎯 Excellent model performance! High accuracy predictions.")
-                elif metrics['test_r2'] > 0.6:
+                elif metrics["test_r2"] > 0.6:
                     st.info("👍 Good model performance. Reliable predictions.")
-                elif metrics['test_r2'] > 0.4:
+                elif metrics["test_r2"] > 0.4:
                     st.warning("⚠️ Moderate model performance. Use predictions with caution.")
                 else:
                     st.error("❌ Poor model performance. Predictions may be unreliable.")
 
                 # Feature importance
-                if 'feature_importance' in locals() and feature_importance is not None and not feature_importance.empty:
+                if "feature_importance" in locals() and feature_importance is not None and not feature_importance.empty:
                     st.markdown("### 🧭 Feature Importance")
 
                     fig_importance = px.bar(
                         feature_importance.head(10),
-                        x='importance',
-                        y='feature',
-                        orientation='h',
+                        x="importance",
+                        y="feature",
+                        orientation="h",
                         title="Top 10 Most Important Features",
-                        color='importance',
-                        color_continuous_scale='bluered',
-                        template='plotly_white'
+                        color="importance",
+                        color_continuous_scale="bluered",
+                        template="plotly_white"
                     )
                     fig_importance.update_layout(
-                        yaxis={'categoryorder': 'total ascending'}
+                        yaxis={"categoryorder": "total ascending"}
                     )
                     st.plotly_chart(fig_importance, use_container_width=True)
 
@@ -872,15 +939,15 @@ def main():
             display_df = df.tail(50).copy()
 
             # Format columns for display
-            if 'Date' in display_df.columns:
-                display_df['Date'] = display_df['Date'].dt.strftime('%Y-%m-%d')
+            if "Date" in display_df.columns:
+                display_df["Date"] = display_df["Date"].dt.strftime("%Y-%m-%d")
 
             # Select columns to display
-            display_columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
-            if 'MA_20' in display_df.columns:
-                display_columns.append('MA_20')
-            if 'RSI' in display_df.columns:
-                display_columns.append('RSI')
+            display_columns = ["Date", "Open", "High", "Low", "Close", "Volume"]
+            if "MA_20" in display_df.columns:
+                display_columns.append("MA_20")
+            if "RSI" in display_df.columns:
+                display_columns.append("RSI")
 
             display_df = display_df[display_columns]
 
@@ -937,10 +1004,9 @@ def main():
 
     else:
         # Welcome screen
+        st.markdown("## 🚀 Welcome to US StockAI Predictor Pro")
+        st.markdown("### 🇺🇸 WELCOME to the STOCKS world")
         st.markdown("""
-        ## 🚀 Welcome to US StockAI Predictor Pro
-
-        ### 🇺🇸 US-Centric Features:
         - 🔄 US Market Data Integration (Alpha Vantage)
         - 🤖 Machine Learning Predictions (Random Forest)
         - 📊 Technical Indicators and Market Insights
@@ -948,20 +1014,20 @@ def main():
         - 📈 Interactive charts with Plotly
         - 🔍 Detailed model performance metrics
 
-        ### 🏛️ US Market Coverage (Examples):
+        #### 🏛️ US Market Coverage (Examples)
         - Apple (AAPL), Alphabet (GOOGL), Microsoft (MSFT)
         - Tesla (TSLA), Amazon (AMZN), NVIDIA (NVDA)
         - Meta (META), Netflix (NFLX), JPMorgan (JPM), Visa (V)
         - Berkshire Hathaway (BRK-B), UnitedHealth (UNH), Exxon (XOM)
 
-        ### 🎯 How It Works:
+        #### 🎯 How It Works
         1) 📊 Select your US stock or enter a ticker
         2) ⏱️ Choose a time period (1 month to 5 years)
         3) 🤖 The model learns from historical patterns
         4) 🔮 View next-day prediction and insights
         5) 📈 Explore interactive charts and analytics
 
-        ### 💡 Pro Tips:
+        #### 💡 Pro Tips
         - For more reliable training, use 1y+ data
         - Consider macro news and earnings dates
         - Use predictions as one input among many
@@ -970,7 +1036,10 @@ def main():
         <div style="text-align: center; color: #666; margin-top: 1.5rem;">
             Built with ❤️ using Streamlit, scikit-learn, and Plotly
         </div>
-        """)
+        """, unsafe_allow_html=True)
 
+# -----------------------------------------------------------------------------
+# Entrypoint
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     main()

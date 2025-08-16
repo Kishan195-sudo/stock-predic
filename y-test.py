@@ -1,20 +1,25 @@
 from alpha_vantage.timeseries import TimeSeries
+import os
 import pandas as pd
 
-# Tumhara API key yahan daalo
-api_key = "U6C4TOUUYCXNM53B"
+def main():
+    # Prefer env var for security; fallback to provided key for quick test
+    api_key = (os.getenv("ALPHA_VANTAGE_API_KEY") or "U6C4TOUUYCXNM53B").strip()
 
-# Alpha Vantage object create karo
-ts = TimeSeries(key=api_key, output_format='pandas')
+    # Create Alpha Vantage TimeSeries client
+    ts = TimeSeries(key=api_key, output_format='pandas')
 
-try:
-    # Example: 'RELIANCE.BSE' => BSE (Indian) format
-    data, meta_data = ts.get_daily(symbol='RELIANCE.BSE', outputsize='compact')
+    symbol = 'RELIANCE.BSE'  # Example Indian BSE symbol; for US, use 'AAPL', 'MSFT', etc.
 
-    # Latest 5 days ka data print karo
-    print("\n📊 Last 5 Days Data:\n")
-    print(data.head())
+    try:
+        data, meta_data = ts.get_daily(symbol=symbol, outputsize='compact')
+        print("\n📊 Last 5 Rows:\n")
+        print(data.head())
+        print("\nℹ️ Meta Data:\n")
+        print(meta_data)
+    except Exception as e:
+        print("\n❌ Error fetching data:")
+        print(e)
 
-except Exception as e:
-    print("\n❌ Error fetching data:")
-    print(e)
+if __name__ == "__main__":
+    main()

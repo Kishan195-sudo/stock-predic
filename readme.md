@@ -1,339 +1,218 @@
-# 📈 StockAI Predictor Pro
+# US StockAI Predictor Pro
 
-A sophisticated machine learning application for predicting stock prices using Random Forest algorithm, advanced feature engineering, and real-time market data visualization.
+US StockAI Predictor Pro is a Streamlit web app for US market analysis and AI-powered next-day price prediction. It fetches daily stock data from Alpha Vantage, engineers technical indicators, trains a Random Forest model, visualizes insights with Plotly, and provides an interactive, US-themed UI.
 
-## 🎯 Model Architecture & Performance
+- Live-ready: Deploy in minutes on Streamlit Community Cloud
+- Batteries included: Technical indicators, model metrics, feature importance, CSV export
+- Robust: Falls back to realistic sample data if live APIs are unavailable
 
-### Machine Learning Model
-- **Algorithm**: Random Forest Regressor
-- **Implementation**: scikit-learn's RandomForestRegressor
-- **Parameters**:
-  - n_estimators: 100
-  - max_depth: 10
-  - random_state: 42
-  - n_jobs: -1 (parallel processing)
+## Features
 
-### Feature Engineering
-1. **Price Features**:
-   - Open, High, Low, Close prices
-   - Daily Volume
-   - Price Changes
+- US-focused UI and ticker presets (AAPL, MSFT, NVDA, AMZN, TSLA, etc.)
+- Data source: Alpha Vantage (daily OHLCV)
+- Optional yfinance availability check (for status only)
+- Technical indicators: 20/50-day MA, RSI, Volume MA, daily price change
+- Machine learning:
+  - RandomForestRegressor with feature scaling
+  - Train/test split with R², RMSE, MAE metrics
+  - Feature importance visualization
+- Prediction: Next-day price estimate with signal (bullish/neutral/bearish)
+- Visualizations: Price + MAs, Volume, RSI with thresholds
+- Data export: Download CSV, view last 50 rows
+- Caching: st.cache_data for faster reloads
+- Graceful fallback: Auto-generates realistic sample data when API fails
 
-2. **Technical Indicators**:
-   - Moving Averages (MA_20, MA_50)
-   - Relative Strength Index (RSI)
-   - Volume Moving Average
-   - Price Change Percentage
+## Tech Stack
 
-3. **Lag Features**:
-   - Previous 1, 2, 3, and 5-day closing prices
-   - Historical price patterns
+- Python, Streamlit
+- scikit-learn, pandas, numpy
+- plotly, requests
+- Alpha Vantage API
+- yfinance (optional; status check only)
 
-### Model Performance Metrics
-- **RMSE (Root Mean Square Error)**: Measures prediction accuracy
-- **MAE (Mean Absolute Error)**: Average absolute difference
-- **R² Score**: Model's explanatory power
-- **Feature Importance Analysis**: Identifies most influential factors
+## Repository Structure
 
-## 🚀 Features
+Suggested layout:
+- app.py (main Streamlit app; contains all code)
+- requirements.txt
+- runtime.txt (optional, pin Python version)
+- .streamlit/secrets.toml (local development only; do NOT commit)
+- README.md
 
-- **Real-time Stock Data**: Fetch live data from Alpha Vantage
-- **AI-Powered Predictions**: Advanced Random Forest ML algorithm with feature engineering
-- **Multiple Markets**: Support for Indian (NSE) and US stocks
-- **Technical Analysis**: Moving averages, volatility, and technical indicators
-- **Multi-day Forecasting**: Predict up to 30 days ahead
-- **Interactive Dashboard**: Beautiful visualizations with Plotly
-- **Model Performance**: Detailed accuracy metrics and feature importance analysis
-- **Data Export**: Download historical data as CSV
+## Requirements
 
-## 🏗️ Project Structure
+Create a requirements.txt like this:
 
 ```
-market-forecast-app/
-│
-├── app.py                 # Main Streamlit application
-├── y-test.py               # Test your alpha vantage APi key
-├── requirements.txt       # Python dependencies
-├── README.md             # Project documentation
-│
-├── models/               # Directory for saved models (auto-created)
-│   ├── RELIANCE_model_*.pkl
-│   └── RELIANCE_scaler_*.pkl
-│
-└── data/                 # Directory for data files (optional)
-    └── *.csv
+streamlit==1.36.0
+pandas
+numpy
+plotly
+scikit-learn
+requests
+yfinance
 ```
 
-## 🛠️ Installation & Setup
+Optional: Pin Python version with runtime.txt
 
-### Local Development
-
-1. **Clone or Download the Project**
-   ```bash
-   mkdir market-forecast-app
-   cd market-forecast-app
-   ```
-
-2. **Create Virtual Environment** (Recommended)
-   ```bash
-   python -m venv venv
-   
-   # On Windows
-   venv\Scripts\activate
-   
-   # On macOS/Linux
-   source venv/bin/activate
-   ```
-
-3. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run the Application**
-   ```bash
-   streamlit run app.py
-   ```
-
-5. **Open in Browser**
-   - The app will automatically open at `http://localhost:8501`
-
-### 🚀 Deploy on Streamlit Cloud
-
-1. **Fork the Repository**
-   ```bash
-   # Fork from GitHub
-   https://github.com/techiepookie/StockAI-predictor-pro
-   ```
-
-2. **Clone Your Fork**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/StockAI-predictor-pro.git
-   cd StockAI-predictor-pro
-   ```
-
-3. **Set Up Environment Variables**
-   - Go to Streamlit Cloud Dashboard
-   - Navigate to App Settings > Secrets
-   - Add your Alpha Vantage API key:
-     ```toml
-     ALPHA_VANTAGE_API_KEY = "your_api_key_here"
-     ```
-
-4. **Deploy on Streamlit Cloud**
-   - Visit [share.streamlit.io](https://share.streamlit.io)
-   - Sign in with GitHub
-   - Click "New app"
-   - Select your forked repository
-   - Configure deployment:
-     - Main file path: `app.py`
-     - Branch: `main`
-     - Python version: 3.8+
-   - Click "Deploy!"
-
-5. **Access Your App**
-   - URL format: `https://YOUR_USERNAME-stockai-predictor-pro.streamlit.app`
-   - Share with your users!
-
-## 📊 How to Use
-
-### 1. Select Stock
-- **Indian Stocks**: Choose from popular NSE stocks like RELIANCE.NS, TCS.NS
-- **US Stocks**: Select from NASDAQ/NYSE stocks like AAPL, GOOGL
-- **Custom Ticker**: Enter any valid stock ticker symbol
-
-### 2. Configure Settings
-- **Time Period**: Select data range (1 month to 5 years)
-- **Prediction Days**: Choose how many days to forecast (1-30)
-- **Model Settings**: Enable/disable model retraining
-
-### 3. Analyze Results
-- **Stock Analysis**: View current metrics and company information
-- **Predictions**: See AI-generated price forecasts
-- **Charts**: Interactive price and volume visualizations
-- **Model Performance**: Detailed accuracy metrics
-- **Data Table**: Historical data with download option
-
-## 🤖 Machine Learning Details
-
-### Algorithm
-- **Random Forest Regressor**: Ensemble method for robust predictions
-- **Feature Engineering**: Technical indicators, lag features, and temporal features
-- **Cross-validation**: Time-series aware splitting to prevent data leakage
-
-### Features Used
-- **Price Data**: Open, High, Low, Close, Volume
-- **Technical Indicators**: Moving averages (5, 10, 20 days)
-- **Lag Features**: Previous day values (1, 2, 3 days)
-- **Volatility Measures**: Price changes and high-low percentages
-- **Temporal Features**: Day of week, month
-
-### Model Evaluation
-- **R² Score**: Coefficient of determination
-- **RMSE**: Root Mean Square Error
-- **MAE**: Mean Absolute Error
-- **Feature Importance**: Most influential factors
-
-## 📈 Supported Stock Examples
-
-### Indian Stocks (NSE)
 ```
-RELIANCE.NS    - Reliance Industries
-TCS.NS         - Tata Consultancy Services
-INFY.NS        - Infosys
-HDFCBANK.NS    - HDFC Bank
-ICICIBANK.NS   - ICICI Bank
-HINDUNILVR.NS  - Hindustan Unilever
-ITC.NS         - ITC Limited
-KOTAKBANK.NS   - Kotak Mahindra Bank
-LT.NS          - Larsen & Toubro
-AXISBANK.NS    - Axis Bank
+python-3.11
 ```
 
-### US Stocks
+## Setup (Local Development)
+
+1) Clone and create a virtual environment:
+
 ```
-AAPL    - Apple Inc.
-GOOGL   - Alphabet Inc.
-MSFT    - Microsoft Corporation
-AMZN    - Amazon.com Inc.
-TSLA    - Tesla Inc.
-META    - Meta Platforms Inc.
-NVDA    - NVIDIA Corporation
-NFLX    - Netflix Inc.
-AMD     - Advanced Micro Devices
-INTC    - Intel Corporation
+git clone <your-repo-url>
+cd <your-repo>
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-## � Model Evaluation Details
+2) Configure secrets (Alpha Vantage API key). For local development, create .streamlit/secrets.toml:
 
-### Performance Metrics
-1. **Root Mean Square Error (RMSE)**
-   - Measures prediction accuracy
-   - Lower values indicate better performance
-   - Calculated as: sqrt(mean((actual - predicted)²))
+```
+# .streamlit/secrets.toml
+ALPHA_VANTAGE_API_KEY = "your_real_alpha_vantage_key"
+```
 
-2. **Mean Absolute Error (MAE)**
-   - Average absolute difference between predictions and actual values
-   - More robust to outliers than RMSE
-   - Calculated as: mean(|actual - predicted|)
+The app also supports environment variables as a fallback (useful on some hosts):
 
-3. **R² Score (Coefficient of Determination)**
-   - Indicates the proportion of variance explained by the model
-   - Range: 0 to 1 (higher is better)
-   - Calculated using scikit-learn's r2_score
+- Add to your shell or host: ALPHA_VANTAGE_API_KEY=your_real_key
+- In code, it already tries st.secrets.get(..., "fallback"), but you can extend it to check os.getenv if you also deploy on hosts that use env vars (e.g., Hugging Face/Render).
 
-### Feature Importance Analysis
-- Random Forest provides built-in feature importance scores
-- Higher scores indicate more influential features
-- Top features typically include:
-  1. Recent closing prices (Close_Lag_1)
-  2. Volume indicators
-  3. Technical indicators (RSI, MA)
+3) Run the app:
 
-### Cross-Validation Strategy
-- Time series split to prevent data leakage
-- 80-20 train-test split
-- No shuffle to maintain temporal order
-- Validation on most recent data
+```
+streamlit run app.py
+```
 
-## �🔧 Technical Requirements
+Open the local URL shown in the terminal.
 
-- **Python**: 3.8 or higher
-- **Memory**: Minimum 512MB RAM
-- **Internet**: Required for fetching real-time stock data
-- **Browser**: Modern web browser (Chrome, Firefox, Safari, Edge)
-- **Storage**: ~100MB for application and dependencies
+## Usage
 
-## 📦 Dependencies
+- Sidebar:
+  - Choose market: US Stocks or Custom Ticker
+  - Select a preset ticker or type one (e.g., AAPL, BRK-B)
+  - Choose period: 1mo to 5y
+  - Click “Predict Stock Price”
+- Tabs:
+  - Stock Analysis: Key stats, RSI, volatility, 52W high/low
+  - Predictions: Model metrics + next-day prediction and signal
+  - Charts: Close + MAs, Volume, RSI with overbought/oversold
+  - Model Performance: Training/testing metrics and feature importance
+  - Data Table: Last 50 rows, CSV download, basic stats
 
-- **streamlit**: Web app framework
-- **pandas**: Data manipulation and analysis
-- **numpy**: Numerical computing
-- **scikit-learn**: Machine learning algorithms
-- **joblib**: Model serialization
-- **plotly**: Interactive visualizations
-- **matplotlib**: Additional plotting capabilities
+Note: The “Days to Predict” slider is currently a preview control; the app predicts the next day price.
 
-## 🔍 Troubleshooting
+## Deployment (Free Options)
 
-### Common Issues
+### 1) Streamlit Community Cloud (recommended)
 
-1. **"Invalid ticker" Error**
-   - Ensure ticker symbol is correct
-   - For Indian stocks, add `.NS` suffix (e.g., `RELIANCE.NS`)
-   - For US stocks, use standard symbols (e.g., `AAPL`)
+- Push your repo to GitHub
+- Go to https://share.streamlit.io and sign in with GitHub
+- Create new app: select repo, branch, and main file (app.py)
+- Set Python version in Advanced or include runtime.txt
+- Add secrets: App → Settings → Secrets
 
-2. **"No data found" Error**
-   - Check internet connection
-   - Verify stock ticker exists
-   - Try different time period
+Paste in TOML format:
 
-3. **Model Training Failed**
-   - Ensure sufficient data (minimum 50 data points)
-   - Try longer time period
-   - Check for data quality issues
+ALPHA_VANTAGE_API_KEY = "your_real_key_here"
 
-4. **Slow Performance**
-   - Reduce prediction days for faster processing
-   - Use shorter time periods for training
-   - Ensure stable internet connection
+- Click Deploy and wait for build to finish
 
-### Performance Tips
-- Start with 1-year data for balanced accuracy and speed
-- Use 7-day predictions for optimal performance
-- Retrain model weekly for best accuracy
+Notes:
+- Free Alpha Vantage: ~5 requests/min and 500/day (check your plan)
+- The app includes a 1s sleep; consider increasing if traffic grows
+- Do not commit secrets.toml to your repo
 
-## ⚠️ Important Disclaimers
+### 2) Hugging Face Spaces (Streamlit)
 
-1. **Educational Purpose**: This application is for educational and research purposes only
-2. **Not Financial Advice**: Predictions should not be used as sole basis for investment decisions
-3. **Market Risks**: Stock markets are inherently unpredictable and risky
-4. **Consult Professionals**: Always consult with qualified financial advisors
-5. **Do Your Research**: Conduct thorough analysis before making investment decisions
+- Create a Space (SDK: Streamlit)
+- Upload app.py, requirements.txt (and runtime.txt if needed)
+- Add a repository secret: ALPHA_VANTAGE_API_KEY
+- If you want environment variable support in code, you can modify the line that reads the key to also check os.getenv
 
-## 🤝 Contributing
+Example pattern:
+```
+import os
+ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY") or os.getenv("ALPHA_VANTAGE_API_KEY", "YOUR_FALLBACK_OR_EMPTY")
+```
 
-Contributions are welcome! Here's how you can help:
+### 3) Render (Web Service)
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b new-feature`
-3. **Make your changes**
-4. **Commit changes**: `git commit -am 'Add new feature'`
-5. **Push to branch**: `git push origin new-feature`
-6. **Submit pull request**
+- Connect your GitHub repo on Render and create a Web Service
+- Build command:
+```
+pip install -r requirements.txt
+```
+- Start command:
+```
+streamlit run app.py --server.port $PORT --server.address 0.0.0.0
+```
+- Add environment variable ALPHA_VANTAGE_API_KEY in Render settings
+- Choose free instance type and deploy
 
-### Areas for Improvement
-- Add more ML algorithms (LSTM, ARIMA, Prophet)
-- Implement portfolio analysis
-- Add real-time alerts and notifications
-- Include fundamental analysis data
-- Add backtesting capabilities
+## Configuration and Secrets
 
-## 📄 License
+The app reads the Alpha Vantage API key like this:
+- st.secrets.get("ALPHA_VANTAGE_API_KEY", "RSMSPEMM4AQHT6QL")
+- Replace the fallback with a blank string in production, or set your real key via Streamlit Cloud Secrets
+- For hosts that prefer environment variables, add an os.getenv fallback
 
-This project is open source and available under the [MIT License](LICENSE).
+## Data Source and Rate Limits
 
-## 📞 Support
+- Primary: Alpha Vantage TIME_SERIES_DAILY endpoint
+- Rate limits on free tier are strict; you may see “rate limit exceeded” messages
+- The app uses a 1-second delay per request and caches results for 300 seconds
+- If live data fails, the app generates realistic sample data so users can continue exploring features
 
-If you encounter any issues or have questions:
+## Model Details
 
-1. **Check the troubleshooting section** above
-2. **Review the documentation** thoroughly
-3. **Create an issue** on GitHub with detailed information
-4. **Include error messages** and steps to reproduce
+- RandomForestRegressor (n_estimators=200, max_depth=12)
+- StandardScaler for feature scaling
+- Train/test split (time-ordered, no shuffle)
+- Indicators: MA_20, MA_50, RSI, Volume_MA, Price_Change, lag features Close_Lag_{1,2,3,5}
+- Metrics: R², RMSE, MAE (training and testing)
+- Feature importance plotted via Plotly
 
-## 🎯 Future Enhancements
+Note: Next-day predictions are point estimates and should not be considered financial advice.
 
-- **LSTM Neural Networks**: Deep learning for time series
-- **Sentiment Analysis**: Social media and news sentiment
-- **Portfolio Optimization**: Multi-stock portfolio analysis
-- **Real-time Alerts**: Price target notifications
-- **Mobile App**: React Native mobile version
-- **API Integration**: RESTful API for developers
-- **Backtesting**: Historical strategy performance testing
+## Troubleshooting
 
----
+- ModuleNotFoundError: Ensure your requirements.txt is complete and re-deploy
+- Blank/empty data: Check your ticker symbol and Alpha Vantage API key
+- Rate limit warnings: Wait and retry, or upgrade API plan
+- Build failures on cloud:
+  - Pin Python version with runtime.txt
+  - Confirm your app’s main file path matches the deploy settings
+- Secrets not found:
+  - Streamlit Cloud: Use the Secrets UI (TOML format)
+  - Hugging Face/Render: Use environment variables and add os.getenv fallback
 
-**Built with ❤️ using Streamlit, scikit-learn, and Alpha Vantage API**
+## Extending the App
 
-*Last updated: August 2025*
+- Add more indicators (MACD, Bollinger Bands)
+- Try other models (XGBoost, LightGBM, LSTM)
+- Implement multi-day forecasting
+- Add earnings/calendar overlays
+- Persist predictions or logs via a database
+
+## Disclaimer
+
+This application is for educational and research purposes only. Stock predictions are uncertain and should not be used as the sole basis for investment decisions. Do your own research and consult a qualified financial advisor.
+
+## License
+
+Choose a license that fits your needs (e.g., MIT). If you’re unsure, MIT is a common permissive choice.
+
+## Acknowledgments
+
+- Streamlit for rapid UI
+- Alpha Vantage for market data
+- Plotly for interactive charts
+- scikit-learn for ML utilities
+

@@ -2,7 +2,7 @@ from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
 
 # Tumhara API key yahan daalo
-api_key = "RSMSPEMM4AQHT6QL"
+api_key = "U6C4TOUUYCXNM53B"
 
 # Alpha Vantage object create karo
 ts = TimeSeries(key=api_key, output_format='pandas')

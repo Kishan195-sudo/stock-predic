@@ -16,9 +16,6 @@ from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings('ignore')
 
-# -----------------------------------------------------------------------------
-# Streamlit Page Config
-# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="US StockAI Predictor Pro",
     page_icon="🇺🇸",
@@ -26,15 +23,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -----------------------------------------------------------------------------
-# Custom CSS (US theme + welcome banner)
-# -----------------------------------------------------------------------------
 st.markdown("""
     <style>
-        /* Import Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-        /* Headers and Text */
         .main-header {
             font-size: 3.5rem;
             font-weight: 800;
@@ -47,7 +39,6 @@ st.markdown("""
             font-family: 'Inter', sans-serif;
             letter-spacing: 0.5px;
         }
-
         .subtitle {
             text-align: center;
             font-size: 1.2rem;
@@ -55,7 +46,6 @@ st.markdown("""
             margin-bottom: 1.0rem;
             font-weight: 400;
         }
-
         .welcome-banner {
             text-align: center;
             margin: 0.75rem auto 2rem auto;
@@ -67,27 +57,9 @@ st.markdown("""
             background: linear-gradient(90deg, rgba(11,83,148,0.08), rgba(214,40,40,0.08));
             max-width: 900px;
         }
-
-        /* Status Indicators */
-        .api-status {
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .api-working {
-            background: #e8f5e9;
-            color: #1b5e20;
-            border: 1px solid #c8e6c9;
-        }
-
-        .api-failed {
-            background: #ffebee;
-            color: #b71c1c;
-            border: 1px solid #ffcdd2;
-        }
-
-        /* US Accent Badges */
+        .api-status { padding: 1rem; border-radius: 8px; margin: 1rem 0; }
+        .api-working { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+        .api-failed { background: #ffebee; color: #b71c1c; border: 1px solid #ffcdd2; }
         .us-badge {
             background: linear-gradient(90deg, rgba(11,83,148,0.15), rgba(214,40,40,0.15));
             padding: 0.8rem 1rem;
@@ -96,56 +68,29 @@ st.markdown("""
             border-radius: 8px;
             margin-bottom: 1rem;
         }
-
-        /* Buttons */
         .stButton > button {
             background: linear-gradient(45deg, #0B5394, #D62828);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.25s ease;
-            width: 100%;
+            color: white; border: none; padding: 0.75rem 1.5rem;
+            border-radius: 8px; font-weight: 600; font-size: 1rem;
+            transition: all 0.25s ease; width: 100%;
         }
-
         .stButton > button:hover {
             background: linear-gradient(45deg, #083b6a, #a41f1f);
             transform: translateY(-1px);
             box-shadow: 0 6px 16px rgba(0,0,0,0.15);
         }
-
-        /* Info Card */
         .info-card {
-            background: #f7fbff;
-            border: 1px solid #d0e6ff;
-            border-left: 5px solid #0B5394;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            background: #f7fbff; border: 1px solid #d0e6ff; border-left: 5px solid #0B5394;
+            padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1rem;
         }
-
-        /* Warning Card */
         .warning-card {
-            background: #fff9e6;
-            padding: 1.25rem;
-            border-radius: 8px;
-            border: 1px solid #ffe8a1;
-            margin-top: 1.5rem;
-            border-left: 5px solid #ffca28;
+            background: #fff9e6; padding: 1.25rem; border-radius: 8px;
+            border: 1px solid #ffe8a1; margin-top: 1.5rem; border-left: 5px solid #ffca28;
         }
-
-        /* Hide Streamlit branding */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# Optional yfinance availability (for API status check only)
-# -----------------------------------------------------------------------------
 try:
     import yfinance as yf
     YFINANCE_AVAILABLE = True
@@ -153,59 +98,32 @@ except ImportError:
     YFINANCE_AVAILABLE = False
     st.warning("⚠️ yfinance not installed. Only Alpha Vantage will be used for data.")
 
-# -----------------------------------------------------------------------------
-# Alpha Vantage Configuration (supports secrets and env vars)
-# -----------------------------------------------------------------------------
 ALPHA_VANTAGE_API_KEY = (
     (st.secrets.get("ALPHA_VANTAGE_API_KEY") or "").strip()
     or (os.getenv("ALPHA_VANTAGE_API_KEY") or "").strip()
-    or "U6C4TOUUYCXNM53B"  # Fallback for quick testing; set a real secret in production
+    or "U6C4TOUUYCXNM53B"
 )
 AV_BASE_URL = "https://www.alphavantage.co/query"
 
-# -----------------------------------------------------------------------------
-# US Stock Ticker Presets
-# -----------------------------------------------------------------------------
 RELIABLE_TICKERS_US = {
-    "AAPL": "Apple Inc.",
-    "GOOGL": "Alphabet Inc.",
-    "MSFT": "Microsoft Corporation",
-    "TSLA": "Tesla Inc.",
-    "AMZN": "Amazon.com Inc.",
-    "NVDA": "NVIDIA Corporation",
-    "META": "Meta Platforms Inc.",
-    "NFLX": "Netflix Inc.",
-    "JPM": "JPMorgan Chase & Co.",
-    "V": "Visa Inc.",
-    "BRK-B": "Berkshire Hathaway Inc. Class B",
-    "UNH": "UnitedHealth Group",
-    "XOM": "Exxon Mobil Corporation",
-    "PG": "Procter & Gamble",
-    "HD": "Home Depot"
+    "AAPL": "Apple Inc.", "GOOGL": "Alphabet Inc.", "MSFT": "Microsoft Corporation",
+    "TSLA": "Tesla Inc.", "AMZN": "Amazon.com Inc.", "NVDA": "NVIDIA Corporation",
+    "META": "Meta Platforms Inc.", "NFLX": "Netflix Inc.", "JPM": "JPMorgan Chase & Co.",
+    "V": "Visa Inc.", "BRK-B": "Berkshire Hathaway Inc. Class B", "UNH": "UnitedHealth Group",
+    "XOM": "Exxon Mobil Corporation", "PG": "Procter & Gamble", "HD": "Home Depot"
 }
 
-# -----------------------------------------------------------------------------
-# Utilities
-# -----------------------------------------------------------------------------
 def normalize_symbol_for_alpha_vantage(ticker: str) -> str:
-    """
-    Normalize user-entered ticker for Alpha Vantage.
-    - Alpha Vantage typically uses a dot for class shares (e.g., BRK.B)
-    - Users might enter BRK-B, which we convert to BRK.B for AV
-    """
     t = (ticker or "").strip()
     if "-" in t and "." not in t:
         t = t.replace("-", ".")
     return t
 
 def test_api_connections():
-    """Test both API connections and return status"""
     status = {
         "yfinance": {"available": YFINANCE_AVAILABLE, "working": False, "message": ""},
         "alpha_vantage": {"available": True, "working": False, "message": ""},
     }
-
-    # Test yfinance
     if YFINANCE_AVAILABLE:
         try:
             test_stock = yf.Ticker("AAPL")
@@ -219,18 +137,10 @@ def test_api_connections():
             status["yfinance"]["message"] = f"❌ yfinance error: {str(e)[:50]}..."
     else:
         status["yfinance"]["message"] = "❌ yfinance not installed"
-
-    # Test Alpha Vantage
     try:
-        params = {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": "AAPL",
-            "apikey": ALPHA_VANTAGE_API_KEY,
-            "outputsize": "compact",
-        }
+        params = {"function": "TIME_SERIES_DAILY", "symbol": "AAPL", "apikey": ALPHA_VANTAGE_API_KEY, "outputsize": "compact"}
         response = requests.get(AV_BASE_URL, params=params, timeout=15)
         data = response.json()
-
         if "Time Series (Daily)" in data:
             status["alpha_vantage"]["working"] = True
             status["alpha_vantage"]["message"] = "✅ Alpha Vantage is working"
@@ -242,129 +152,78 @@ def test_api_connections():
             status["alpha_vantage"]["message"] = "❌ Unknown Alpha Vantage response"
     except Exception as e:
         status["alpha_vantage"]["message"] = f"❌ Alpha Vantage connection failed: {str(e)[:50]}..."
-
     return status
 
 def get_period_days(period):
-    """Convert period string to number of days"""
-    period_map = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}
-    return period_map.get(period, 365)
+    return {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}.get(period, 365)
 
 @st.cache_data(ttl=300)
 def fetch_stock_data_unified(display_ticker, period="1y"):
-    """
-    Fetch stock data from Alpha Vantage with fallback to sample data.
-    display_ticker: what the user selected/typed (kept for display)
-    """
     try:
         av_ticker = normalize_symbol_for_alpha_vantage(display_ticker)
-
-        # Respect Alpha Vantage free tier rate limits
         time.sleep(1)
-
-        params = {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": av_ticker,
-            "apikey": ALPHA_VANTAGE_API_KEY,
-            "outputsize": "full",
-            "datatype": "json",
-        }
-
+        params = {"function": "TIME_SERIES_DAILY", "symbol": av_ticker, "apikey": ALPHA_VANTAGE_API_KEY, "outputsize": "full", "datatype": "json"}
         response = requests.get(AV_BASE_URL, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-
         if "Error Message" in data:
             raise Exception(data["Error Message"])
-
         if "Time Series (Daily)" not in data:
             raise Exception("No data found in response")
-
-        # Convert to DataFrame (explicitly rename columns for safety)
         raw_df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index")
-        rename_map = {
-            "1. open": "Open",
-            "2. high": "High",
-            "3. low": "Low",
-            "4. close": "Close",
-            "5. volume": "Volume",
-        }
-        raw_df = raw_df.rename(columns=rename_map)
-        expected_cols = ["Open", "High", "Low", "Close", "Volume"]
-        df = raw_df[expected_cols].astype(float)
+        raw_df = raw_df.rename(columns={
+            "1. open": "Open", "2. high": "High", "3. low": "Low", "4. close": "Close", "5. volume": "Volume"
+        })
+        df = raw_df[["Open", "High", "Low", "Close", "Volume"]].astype(float)
         df.index = pd.to_datetime(df.index)
         df = df.sort_index().reset_index().rename(columns={"index": "Date"})
-
-        # Filter for requested period
         days = get_period_days(period)
         start_date = datetime.now() - timedelta(days=days)
         df = df[df["Date"] >= start_date]
-
         df.attrs["source"] = "alpha_vantage"
         df.attrs["av_symbol_used"] = av_ticker
         return df
-
     except Exception as e:
         st.warning(f"Alpha Vantage API error: {str(e)}. Using sample data.")
         return create_sample_data(display_ticker, period)
 
 def create_sample_data(ticker, period):
-    """Create realistic sample data when APIs fail"""
     days = get_period_days(period)
-
     base_prices = {
         "AAPL": 180, "GOOGL": 140, "MSFT": 330, "TSLA": 250,
         "AMZN": 140, "META": 300, "NVDA": 450, "NFLX": 400,
         "JPM": 150, "V": 260, "BRK-B": 400, "UNH": 500, "XOM": 110,
         "PG": 160, "HD": 350
     }
-
     base_name = ticker.split(".")[0].upper()
     base_price = base_prices.get(base_name, 100)
-
     np.random.seed(hash(ticker) % 2**32)
     dates = pd.date_range(end=datetime.now(), periods=days, freq="B")
-
     daily_return = 0.08 / 252
     volatility = 0.02
     returns = np.random.normal(daily_return, volatility, days)
-
     prices = [base_price]
     for i in range(1, days):
         new_price = prices[-1] * (1 + returns[i])
         new_price = max(new_price, base_price * 0.5)
         new_price = min(new_price, base_price * 3.0)
         prices.append(new_price)
-
     data = []
     for i, close_price in enumerate(prices):
         daily_vol = abs(np.random.normal(0, 0.015))
-
         if i == 0:
             open_price = close_price
         else:
             gap = np.random.normal(0, 0.005)
             open_price = prices[i - 1] * (1 + gap)
-
         intraday_range = abs(np.random.normal(0, daily_vol))
         high = max(open_price, close_price) * (1 + intraday_range)
         low = min(open_price, close_price) * (1 - intraday_range)
-
         high = max(open_price, close_price, high)
         low = min(open_price, close_price, low)
-
         base_volume = 1_000_000 if base_price < 500 else 500_000
         volume = int(np.random.lognormal(np.log(base_volume), 0.8))
-
-        data.append({
-            "Date": dates[i],
-            "Open": round(open_price, 2),
-            "High": round(high, 2),
-            "Low": round(low, 2),
-            "Close": round(close_price, 2),
-            "Volume": volume,
-        })
-
+        data.append({"Date": dates[i], "Open": round(open_price, 2), "High": round(high, 2), "Low": round(low, 2), "Close": round(close_price, 2), "Volume": volume})
     df = pd.DataFrame(data)
     df.attrs = {"source": "sample_data", "ticker": ticker}
     return df
@@ -380,34 +239,24 @@ def calculate_rsi(prices, window=14):
 def process_stock_data(df, ticker, source):
     if df is None or df.empty:
         return None
-
     if "Date" not in df.columns and df.index.name == "Date":
         df = df.reset_index()
-
     df["MA_20"] = df["Close"].rolling(window=20).mean()
     df["MA_50"] = df["Close"].rolling(window=50).mean()
     df["RSI"] = calculate_rsi(df["Close"])
     df["Price_Change"] = df["Close"].pct_change()
     df["Volume_MA"] = df["Volume"].rolling(window=10).mean()
-
     for i in [1, 2, 3, 5]:
         df[f"Close_Lag_{i}"] = df["Close"].shift(i)
-
     df = df.dropna()
-
     df.attrs = {"source": source, "ticker": ticker, "last_updated": datetime.now()}
     return df
 
 def prepare_features(df):
-    feature_columns = [
-        "Open", "High", "Low", "Volume", "MA_20", "MA_50", "RSI",
-        "Price_Change", "Volume_MA"
-    ]
-
+    feature_columns = ["Open", "High", "Low", "Volume", "MA_20", "MA_50", "RSI", "Price_Change", "Volume_MA"]
     for i in [1, 2, 3, 5]:
         if f"Close_Lag_{i}" in df.columns:
             feature_columns.append(f"Close_Lag_{i}")
-
     existing_features = [col for col in feature_columns if col in df.columns]
     X = df[existing_features].copy()
     y = df["Close"].copy()
@@ -416,27 +265,17 @@ def prepare_features(df):
 def train_model(df):
     try:
         X, y, feature_names = prepare_features(df)
-
         if X.empty or y.empty:
             st.error("Insufficient data for training")
             return None, None, None, None
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, shuffle=False
-        )
-
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
-
-        model = RandomForestRegressor(
-            n_estimators=200, max_depth=12, random_state=42, n_jobs=-1
-        )
+        model = RandomForestRegressor(n_estimators=200, max_depth=12, random_state=42, n_jobs=-1)
         model.fit(X_train_scaled, y_train)
-
         y_train_pred = model.predict(X_train_scaled)
         y_test_pred = model.predict(X_test_scaled)
-
         metrics = {
             "train_rmse": float(np.sqrt(mean_squared_error(y_train, y_train_pred))),
             "test_rmse": float(np.sqrt(mean_squared_error(y_test, y_test_pred))),
@@ -447,14 +286,8 @@ def train_model(df):
             "train_size": int(len(X_train)),
             "test_size": int(len(X_test)),
         }
-
-        feature_importance = pd.DataFrame({
-            "feature": feature_names,
-            "importance": model.feature_importances_
-        }).sort_values("importance", ascending=False)
-
+        feature_importance = pd.DataFrame({"feature": feature_names, "importance": model.feature_importances_}).sort_values("importance", ascending=False)
         return model, scaler, metrics, feature_importance
-
     except Exception as e:
         st.error(f"Error training model: {str(e)}")
         return None, None, None, None
@@ -490,37 +323,27 @@ def get_stock_info(ticker):
         "PG": {"name": "Procter & Gamble", "sector": "Consumer Staples", "industry": "Household Products", "currency": "USD"},
         "HD": {"name": "Home Depot", "sector": "Consumer Discretionary", "industry": "Home Improvement Retail", "currency": "USD"},
     }
-
     base_ticker = ticker.split(".")[0].upper()
-    info = stock_info.get(base_ticker, {
-        "name": ticker, "sector": "Unknown", "industry": "Unknown", "currency": "USD",
-    })
+    info = stock_info.get(base_ticker, {"name": ticker, "sector": "Unknown", "industry": "Unknown", "currency": "USD"})
     info["market_cap"] = "N/A"
     return info
 
-# -----------------------------------------------------------------------------
-# Main App
-# -----------------------------------------------------------------------------
 def main():
     st.markdown('<h1 class="main-header">US StockAI Predictor Pro 🇺🇸</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">US Market Analysis & AI-Powered Prediction Platform</p>', unsafe_allow_html=True)
     st.markdown('<div class="welcome-banner">WELCOME to the STOCKS world</div>', unsafe_allow_html=True)
 
-    # API Status Check
     with st.expander("🔍 API Status Check", expanded=False):
         if st.button("🔄 Test API Connections", type="primary"):
             with st.spinner("Testing API connections..."):
                 api_status = test_api_connections()
-
             col1, col2 = st.columns(2)
-
             with col1:
                 st.subheader("📊 yfinance Status")
                 if api_status["yfinance"]["working"]:
                     st.markdown(f'<div class="api-status api-working">{api_status["yfinance"]["message"]}</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="api-status api-failed">{api_status["yfinance"]["message"]}</div>', unsafe_allow_html=True)
-
             with col2:
                 st.subheader("🔑 Alpha Vantage Status")
                 if api_status["alpha_vantage"]["working"]:
@@ -528,15 +351,12 @@ def main():
                 else:
                     st.markdown(f'<div class="api-status api-failed">{api_status["alpha_vantage"]["message"]}</div>', unsafe_allow_html=True)
 
-    # Sidebar
     with st.sidebar:
         st.markdown("### ⚙️ Configuration")
         st.markdown("#### 🇺🇸 Platform Status")
         st.markdown('<div class="us-badge">US Market Mode Enabled</div>', unsafe_allow_html=True)
-
         st.markdown("#### 📈 Stock Selection")
         market = st.selectbox("Select Market", ["US Stocks", "Custom Ticker"], help="Choose a popular US stock or enter any US ticker")
-
         if market == "US Stocks":
             selected_stock = st.selectbox("Select Stock", list(RELIABLE_TICKERS_US.keys()))
             ticker = selected_stock
@@ -545,36 +365,27 @@ def main():
             ticker = st.text_input("Enter US Stock Ticker", value="AAPL", help="Examples: AAPL, MSFT, BRK-B (we’ll convert to BRK.B)")
             if ticker:
                 st.info("🇺🇸 US stock format detected")
-
         st.markdown("#### 📅 Time Period")
         period = st.selectbox("Select Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
-
         st.markdown("#### 🔮 Prediction Settings")
         prediction_days = st.slider("Days to Predict (preview)", 1, 30, 7, help="Currently used for next-day prediction preview")
-
         predict_button = st.button("🚀 Predict Stock Price", type="primary", use_container_width=True)
 
     if predict_button:
         if not ticker:
             st.error("Please enter a stock ticker symbol!")
             return
-
         tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Stock Analysis", "🔮 Predictions", "📈 Charts", "🤖 Model Performance", "📋 Data Table"])
-
         with st.spinner("🔄 Fetching US stock data..."):
             df_raw = fetch_stock_data_unified(ticker, period=period)
-
         if df_raw is None or df_raw.empty:
             st.error("❌ Unable to fetch data from any source. Please check the ticker symbol and try again.")
             return
-
         data_source = df_raw.attrs.get("source", "unknown")
         df = process_stock_data(df_raw.copy(), ticker, data_source)
-
         if df is None or df.empty:
             st.error("❌ Unable to process stock data. Please try again.")
             return
-
         if data_source == "sample_data":
             st.warning("⚠️ Using sample data for demonstration. Real-time data unavailable.")
         else:
@@ -588,7 +399,6 @@ def main():
             st.markdown(f"### 📋 {stock_info['name']} ({ticker})")
             if data_source != "sample_data":
                 st.markdown(f'<div class="info-card">📡 Data Source: {data_source.title()}</div>', unsafe_allow_html=True)
-
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 current_price = df["Close"].iloc[-1]
@@ -602,7 +412,6 @@ def main():
             with col4:
                 volatility = df["Close"].pct_change().std() * 100
                 st.metric("Volatility (Daily σ)", f"{volatility:.2f}%")
-
             st.markdown("### 🇺🇸 Stock Details")
             c1, c2 = st.columns(2)
             with c1:
@@ -611,7 +420,6 @@ def main():
             with c2:
                 st.write(f"• Market Cap: {stock_info['market_cap']}")
                 st.write(f"• Currency: {stock_info['currency']}")
-
             st.markdown("### 📈 Key Statistics")
             c1, c2, c3, c4 = st.columns(4)
             with c1:
@@ -630,11 +438,9 @@ def main():
             st.markdown("### 🤖 AI Predictions")
             with st.spinner("🧠 Training ML model..."):
                 model, scaler, metrics, feature_importance = train_model(df)
-
             if model is None:
                 st.error("Failed to train model. Please try with different parameters.")
                 return
-
             c1, c2, c3 = st.columns(3)
             with c1:
                 st.metric("Model R² (Test)", f"{metrics['test_r2']:.3f}")
@@ -642,14 +448,12 @@ def main():
                 st.metric("RMSE (Test)", f"{metrics['test_rmse']:.2f}")
             with c3:
                 st.metric("MAE (Test)", f"{metrics['test_mae']:.2f}")
-
             st.markdown("### 🔮 Next Day Prediction")
             next_day_pred = predict_next_price(model, scaler, df)
             if next_day_pred is not None:
                 current_price = df["Close"].iloc[-1]
                 price_change = next_day_pred - current_price
                 percentage_change = (price_change / current_price) * 100 if current_price != 0 else 0
-
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.metric("Current Price", f"{currency_symbol}{current_price:.2f}")
@@ -657,7 +461,6 @@ def main():
                     st.metric("Predicted Price", f"{currency_symbol}{next_day_pred:.2f}", f"{currency_symbol}{price_change:.2f}")
                 with c3:
                     st.metric("Expected Change", f"{percentage_change:.2f}%")
-
                 if percentage_change > 2:
                     st.success("🟢 Strong Bullish Signal")
                 elif percentage_change > 0:
@@ -713,7 +516,6 @@ def main():
                     st.write(f"- MAE: {metrics['test_mae']:.4f}")
                     st.write(f"- R² Score: {metrics['test_r2']:.4f}")
                     st.write(f"- Sample Size: {metrics['test_size']}")
-
                 st.markdown("### 🎯 Model Interpretation")
                 if metrics["test_r2"] > 0.8:
                     st.success("🎯 Excellent model performance! High accuracy predictions.")
@@ -723,7 +525,6 @@ def main():
                     st.warning("⚠️ Moderate model performance. Use predictions with caution.")
                 else:
                     st.error("❌ Poor model performance. Predictions may be unreliable.")
-
                 if "feature_importance" in locals() and feature_importance is not None and not feature_importance.empty:
                     st.markdown("### 🧭 Feature Importance")
                     fig_importance = px.bar(feature_importance.head(10), x="importance", y="feature", orientation="h", title="Top 10 Most Important Features", color="importance", color_continuous_scale="bluered", template="plotly_white")
@@ -749,10 +550,8 @@ def main():
                 display_columns.append("RSI")
             display_df = display_df[display_columns]
             st.dataframe(display_df, use_container_width=True)
-
             csv = df.to_csv(index=False)
             st.download_button(label="📥 Download Data as CSV", data=csv, file_name=f"{ticker}_us_stock_data_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
-
             st.markdown("### 📊 Data Statistics")
             c1, c2 = st.columns(2)
             with c1:
@@ -817,8 +616,5 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# Entrypoint
-# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     main()

@@ -1,0 +1,243 @@
+[05:56:06] 🐙 Pulling code changes from Github...
+
+[05:56:06] 📦 Processing dependencies...
+
+[05:56:06] 📦 Processed dependencies!
+
+[05:56:07] 🔄 Updated app!
+
+────────────────────── Traceback (most recent call last) ───────────────────────
+
+  /home/adminuser/venv/lib/python3.11/site-packages/streamlit/runtime/scriptru  
+
+  nner/script_runner.py:589 in _run_script                                      
+
+                                                                                
+
+  /mount/src/stock-predic/app.py:251 in <module>                                
+
+                                                                                
+
+    248 │   data=add_indicators(data)                                           
+
+    249 │   src=data.attrs["source"]                                            
+
+    250 │   st.write(f"Data source: **{src}** · Rows: {len(data)}")             
+
+  ❱ 251 │   model,scaler,metrics,imp=train_rf(data)                             
+
+    252 │   pred= model.predict(scaler.transform(prepare_Xy(data)[0].iloc[[-1]  
+
+    253 │   current=data["Close"].iloc[-1]                                      
+
+    254 │   delta=pred-current; pct=delta/current*100                           
+
+                                                                                
+
+  /mount/src/stock-predic/app.py:213 in train_rf                                
+
+                                                                                
+
+    210                                                                         
+
+    211 def train_rf(df):                                                       
+
+    212 │   X,y,features=prepare_Xy(df)                                         
+
+  ❱ 213 │   Xtrain,Xtest,ytrain,ytest=train_test_split(X,y,test_size=.2,shuffl  
+
+    214 │   scaler=StandardScaler().fit(Xtrain)                                 
+
+    215 │   Xtr=scaler.transform(Xtrain); Xte=scaler.transform(Xtest)           
+
+    216 │   model=RandomForestRegressor(n_estimators=200,max_depth=12,n_jobs=-  
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.11/site-packages/sklearn/utils/_param_valid  
+
+  ation.py:213 in wrapper                                                       
+
+                                                                                
+
+    210 │   │   │   │   │   │   prefer_skip_nested_validation or global_skip_v  
+
+    211 │   │   │   │   │   )                                                   
+
+    212 │   │   │   │   ):                                                      
+
+  ❱ 213 │   │   │   │   │   return func(*args, **kwargs)                        
+
+    214 │   │   │   except InvalidParameterError as e:                          
+
+    215 │   │   │   │   # When the function is just a wrapper around an estima  
+
+    216 │   │   │   │   # the function to delegate validation to the estimator  
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.11/site-packages/sklearn/model_selection/_s  
+
+  plit.py:2660 in train_test_split                                              
+
+                                                                                
+
+    2657 │   arrays = indexable(*arrays)                                        
+
+    2658 │                                                                      
+
+    2659 │   n_samples = _num_samples(arrays[0])                                
+
+  ❱ 2660 │   n_train, n_test = _validate_shuffle_split(                         
+
+    2661 │   │   n_samples, test_size, train_size, default_test_size=0.25       
+
+    2662 │   )                                                                  
+
+    2663                                                                        
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.11/site-packages/sklearn/model_selection/_s  
+
+  plit.py:2308 in _validate_shuffle_split                                       
+
+                                                                                
+
+    2305 │   n_train, n_test = int(n_train), int(n_test)                        
+
+    2306 │                                                                      
+
+    2307 │   if n_train == 0:                                                   
+
+  ❱ 2308 │   │   raise ValueError(                                              
+
+    2309 │   │   │   "With n_samples={}, test_size={} and train_size={}, the "  
+
+    2310 │   │   │   "resulting train set will be empty. Adjust any of the "    
+
+    2311 │   │   │   "aforementioned parameters.".format(n_samples, test_size,  
+
+────────────────────────────────────────────────────────────────────────────────
+
+ValueError: With n_samples=0, test_size=0.2 and train_size=None, the resulting 
+
+train set will be empty. Adjust any of the aforementioned parameters.
+
+────────────────────── Traceback (most recent call last) ───────────────────────
+
+  /home/adminuser/venv/lib/python3.11/site-packages/streamlit/runtime/scriptru  
+
+  nner/script_runner.py:589 in _run_script                                      
+
+                                                                                
+
+  /mount/src/stock-predic/app.py:251 in <module>                                
+
+                                                                                
+
+    248 │   data=add_indicators(data)                                           
+
+    249 │   src=data.attrs["source"]                                            
+
+    250 │   st.write(f"Data source: **{src}** · Rows: {len(data)}")             
+
+  ❱ 251 │   model,scaler,metrics,imp=train_rf(data)                             
+
+    252 │   pred= model.predict(scaler.transform(prepare_Xy(data)[0].iloc[[-1]  
+
+    253 │   current=data["Close"].iloc[-1]                                      
+
+    254 │   delta=pred-current; pct=delta/current*100                           
+
+                                                                                
+
+  /mount/src/stock-predic/app.py:213 in train_rf                                
+
+                                                                                
+
+    210                                                                         
+
+    211 def train_rf(df):                                                       
+
+    212 │   X,y,features=prepare_Xy(df)                                         
+
+  ❱ 213 │   Xtrain,Xtest,ytrain,ytest=train_test_split(X,y,test_size=.2,shuffl  
+
+    214 │   scaler=StandardScaler().fit(Xtrain)                                 
+
+    215 │   Xtr=scaler.transform(Xtrain); Xte=scaler.transform(Xtest)           
+
+    216 │   model=RandomForestRegressor(n_estimators=200,max_depth=12,n_jobs=-  
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.11/site-packages/sklearn/utils/_param_valid  
+
+  ation.py:213 in wrapper                                                       
+
+                                                                                
+
+    210 │   │   │   │   │   │   prefer_skip_nested_validation or global_skip_v  
+
+    211 │   │   │   │   │   )                                                   
+
+    212 │   │   │   │   ):                                                      
+
+  ❱ 213 │   │   │   │   │   return func(*args, **kwargs)                        
+
+    214 │   │   │   except InvalidParameterError as e:                          
+
+    215 │   │   │   │   # When the function is just a wrapper around an estima  
+
+    216 │   │   │   │   # the function to delegate validation to the estimator  
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.11/site-packages/sklearn/model_selection/_s  
+
+  plit.py:2660 in train_test_split                                              
+
+                                                                                
+
+    2657 │   arrays = indexable(*arrays)                                        
+
+    2658 │                                                                      
+
+    2659 │   n_samples = _num_samples(arrays[0])                                
+
+  ❱ 2660 │   n_train, n_test = _validate_shuffle_split(                         
+
+    2661 │   │   n_samples, test_size, train_size, default_test_size=0.25       
+
+    2662 │   )                                                                  
+
+    2663                                                                        
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.11/site-packages/sklearn/model_selection/_s  
+
+  plit.py:2308 in _validate_shuffle_split                                       
+
+                                                                                
+
+    2305 │   n_train, n_test = int(n_train), int(n_test)                        
+
+    2306 │                                                                      
+
+    2307 │   if n_train == 0:                                                   
+
+  ❱ 2308 │   │   raise ValueError(                                              
+
+    2309 │   │   │   "With n_samples={}, test_size={} and train_size={}, the "  
+
+    2310 │   │   │   "resulting train set will be empty. Adjust any of the "    
+
+    2311 │   │   │   "aforementioned parameters.".format(n_samples, test_size,  
+
+────────────────────────────────────────────────────────────────────────────────
+
+ValueError: With n_samples=0, test_size=0.2 and train_size=None, the resulting 
+
+train set will be empty. Adjust any of the aforementioned parameters.

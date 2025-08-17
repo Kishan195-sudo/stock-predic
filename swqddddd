@@ -1,7 +1,0 @@
-File "/home/adminuser/venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 589, in _run_script
-    exec(code, module.__dict__)
-File "/mount/src/stock-predic/app.py", line 186, in <module>
-    if u and (u.name or u.email):
-              ^^^^^^
-File "/home/adminuser/venv/lib/python3.11/site-packages/streamlit/user_info.py", line 70, in __getattr__
-    raise AttributeError

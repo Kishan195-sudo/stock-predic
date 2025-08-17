@@ -1,4 +1,4 @@
-import os, time, requests, warnings
+import os, time, json, random, requests, warnings
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -13,252 +13,231 @@ from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings("ignore")
 
-# ------------------------------------------------------------------ #
-# Streamlit page setup
-# ------------------------------------------------------------------ #
-st.set_page_config(
-    page_title="US StockAI Predictor Pro",
-    page_icon="🇺🇸",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+# ──────────────────────────────────────────────────────────────────────────────
+#  Streamlit page config
+# ──────────────────────────────────────────────────────────────────────────────
+st.set_page_config(page_title="US StockAI Predictor Pro",
+                   page_icon="🇺🇸", layout="wide",
+                   initial_sidebar_state="expanded")
 
-# ------------------------------------------------------------------ #
-# --- CSS ---
-# ------------------------------------------------------------------ #
-st.markdown(
-    """
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        .main-header {
-            font-size: 3.5rem; font-weight: 800;
-            background: linear-gradient(90deg,#0B5394,#D62828);
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-            background-clip:text; text-align:center; margin-bottom:.5rem;
-            font-family:'Inter',sans-serif; letter-spacing:.5px;
-        }
-        .subtitle {text-align:center;font-size:1.2rem;color:#4a4a4a;margin-bottom:1rem;font-weight:400;}
-        .welcome-banner {
-            text-align:center;margin:.75rem auto 2rem auto;padding:.75rem 1rem;
-            font-weight:700;color:#0B5394;border:1px solid rgba(11,83,148,.25);
-            border-radius:10px;
-            background:linear-gradient(90deg,rgba(11,83,148,.08),rgba(214,40,40,.08));
-            max-width:900px;
-        }
-        .api-status {padding:1rem;border-radius:8px;margin:1rem 0;}
-        .api-working {background:#e8f5e9;color:#1b5e20;border:1px solid #c8e6c9;}
-        .api-failed {background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;}
-        .us-badge {
-            background:linear-gradient(90deg,rgba(11,83,148,.15),rgba(214,40,40,.15));
-            padding:.8rem 1rem;border:1px solid rgba(11,83,148,.25);
-            border-left:5px solid #0B5394;border-radius:8px;margin-bottom:1rem;
-        }
-        .stButton>button {
-            background:linear-gradient(45deg,#0B5394,#D62828);color:#fff;border:none;
-            padding:.75rem 1.5rem;border-radius:8px;font-weight:600;font-size:1rem;
-            transition:all .25s ease;width:100%;
-        }
-        .stButton>button:hover {
-            background:linear-gradient(45deg,#083b6a,#a41f1f);
-            transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.15);
-        }
-        .info-card {
-            background:#f7fbff;border:1px solid #d0e6ff;border-left:5px solid #0B5394;
-            padding:1rem 1.25rem;border-radius:8px;margin-bottom:1rem;
-        }
-        .warning-card {
-            background:#fff9e6;padding:1.25rem;border-radius:8px;
-            border:1px solid #ffe8a1;margin-top:1.5rem;border-left:5px solid #ffca28;
-        }
-        #MainMenu{visibility:hidden;} footer{visibility:hidden;} header{visibility:hidden;}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ------------------------------------------------------------------ #
-# --- yfinance availability (only for API-status panel) -------------
-# ------------------------------------------------------------------ #
-try:
-    import yfinance as yf
-    YFINANCE_AVAILABLE = True
-except ImportError:
-    YFINANCE_AVAILABLE = False
-    st.warning("⚠️ yfinance not installed. Only Alpha Vantage will be used.")
-
-# ------------------------------------------------------------------ #
-# --- Alpha Vantage config -----------------------------------------
-# ------------------------------------------------------------------ #
+# ──────────────────────────────────────────────────────────────────────────────
+#  GLOBAL CONSTANTS
+# ──────────────────────────────────────────────────────────────────────────────
 ALPHA_VANTAGE_API_KEY = (
     st.secrets.get("ALPHA_VANTAGE_API_KEY", "").strip()
     or os.getenv("ALPHA_VANTAGE_API_KEY", "").strip()
-    or "U6C4TOUUYCXNM53B"   # fallback for testing; replace in production
+    or "U6C4TOUUYCXNM53B"     # fallback for demo
 )
 AV_BASE_URL = "https://www.alphavantage.co/query"
 
-# ------------------------------------------------------------------ #
 RELIABLE_TICKERS_US = {
-    "AAPL":"Apple Inc.","GOOGL":"Alphabet Inc.","MSFT":"Microsoft Corporation",
-    "TSLA":"Tesla Inc.","AMZN":"Amazon.com Inc.","NVDA":"NVIDIA Corporation",
-    "META":"Meta Platforms Inc.","NFLX":"Netflix Inc.","JPM":"JPMorgan Chase & Co.",
-    "V":"Visa Inc.","BRK-B":"Berkshire Hathaway Inc. Class B","UNH":"UnitedHealth Group",
-    "XOM":"Exxon Mobil","PG":"Procter & Gamble","HD":"Home Depot"
+    "AAPL": "Apple Inc.", "GOOGL": "Alphabet Inc.", "MSFT": "Microsoft Corp.",
+    "TSLA": "Tesla Inc.", "AMZN": "Amazon.com Inc.", "NVDA": "NVIDIA Corp.",
+    "META": "Meta Platforms Inc.", "NFLX": "Netflix Inc.",
+    "JPM": "JPMorgan Chase & Co.", "V": "Visa Inc.",
+    "BRK-B": "Berkshire Hathaway Class B", "UNH": "UnitedHealth Group",
+    "XOM": "Exxon Mobil", "PG": "Procter & Gamble", "HD": "Home Depot"
 }
+PERIOD_DAYS = {"1mo":30,"3mo":90,"6mo":180,"1y":365,"2y":730,"5y":1825}
 
-# ------------------------------------------------------------------ #
-def normalize_symbol_for_alpha_vantage(ticker:str)->str:
-    """Convert 'BRK-B' ➜ 'BRK.B' etc. for Alpha Vantage."""
-    t=ticker.strip().upper()
-    return t.replace("-",".") if "-" in t and "." not in t else t
+# ──────────────────────────────────────────────────────────────────────────────
+#  Styling + Animated watermark (CSS + JS canvas)
+# ──────────────────────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-# ------------------------- API status helper ---------------------- #
-def test_api_connections():
-    status={"yfinance":{"available":YFINANCE_AVAILABLE,"working":False,"message":""},
-            "alpha_vantage":{"available":True,"working":False,"message":""}}
-    if YFINANCE_AVAILABLE:
-        try:
-            yf.Ticker("AAPL").history(period="5d")
-            status["yfinance"]["working"]=True
-            status["yfinance"]["message"]="✅ yfinance is working"
-        except Exception as e:
-            status["yfinance"]["message"]=f"❌ yfinance error: {e}"
-    else:
-        status["yfinance"]["message"]="❌ yfinance not installed"
+body {font-family:'Inter',sans-serif;}
+.main-header{font-size:3.5rem;font-weight:800;background:linear-gradient(90deg,#0B5394,#D62828);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:.3rem;}
+.subtitle{text-align:center;font-size:1.20rem;color:#555;margin-bottom:.5rem;font-weight:400;}
+.welcome-banner{text-align:center;margin:10px auto 25px;padding:8px 14px;font-weight:700;color:#0B5394;border:1px solid rgba(11,83,148,.25);border-radius:10px;background:linear-gradient(90deg,rgba(11,83,148,.08),rgba(214,40,40,.08));max-width:900px;}
+.us-badge{background:linear-gradient(90deg,rgba(11,83,148,.15),rgba(214,40,40,.15));padding:.6rem 1rem;border:1px solid rgba(11,83,148,.25);border-left:5px solid #0B5394;border-radius:8px;margin-bottom:1rem;}
+.stButton>button{background:linear-gradient(45deg,#0B5394,#D62828)!important;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;font-size:15px;transition:.25s;width:100%;}
+.stButton>button:hover{background:linear-gradient(45deg,#083b6a,#a41f1f)!important;transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.15);}
+.info-card{background:#f7fbff;border:1px solid #d0e6ff;border-left:5px solid #0B5394;padding:1rem 1.2rem;border-radius:8px;margin-bottom:1rem;}
+.warning-card{background:#fff9e6;padding:1rem 1.2rem;border-radius:8px;border:1px solid #ffe8a1;margin-top:1.5rem;border-left:5px solid #ffca28;font-size:.9rem;}
+#MainMenu, footer, header{visibility:hidden;}
 
+/*  ── WATERMARK CANVAS  ─────────────────────────────────────────── */
+#stock-watermark{
+   position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0.08;
+   background:#ffffff;
+}
+</style>
+
+<canvas id="stock-watermark"></canvas>
+
+<script>
+const cvs = document.getElementById('stock-watermark');
+const ctx = cvs.getContext('2d');
+function resize(){cvs.width=window.innerWidth; cvs.height=window.innerHeight;}
+window.addEventListener('resize',resize); resize();
+
+// random US tickers for animation
+const tickers = %s;
+let quotes = tickers.map(t => ({sym:t,px:Math.random()*300+50}));
+function draw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.font = 'bold 26px Inter';
+  ctx.fillStyle = '#0B5394';
+  const speed = 0.5;
+  quotes.forEach(q=>{
+      q.x = (q.x===undefined)? Math.random()*cvs.width : q.x-speed;
+      if(q.x < -120){ q.x = cvs.width+Math.random()*200; q.px = (Math.random()*300+50).toFixed(2);}
+      ctx.fillText(`${q.sym}  ${q.px}`, q.x, q.y|| (q.y=Math.random()*cvs.height));
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+
+// every 8 s pretend prices changed
+setInterval(()=>quotes.forEach(q=>q.px=(+q.px+(Math.random()-0.5)*2).toFixed(2)),8000);
+</script>
+""" % json.dumps(list(RELIABLE_TICKERS_US.keys())),
+unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Utilities
+# ──────────────────────────────────────────────────────────────────────────────
+def normalize_symbol(symbol:str)->str:
+    symbol = symbol.strip().upper()
+    return symbol.replace("-", ".") if "-" in symbol and "." not in symbol else symbol
+
+def fetch_data(symbol:str,period:str)->pd.DataFrame:
+    """Return OHLCV DataFrame with at least 60 rows or sample fallback."""
     try:
-        params={"function":"TIME_SERIES_DAILY","symbol":"AAPL",
-                "apikey":ALPHA_VANTAGE_API_KEY,"outputsize":"compact"}
-        r=requests.get(AV_BASE_URL,params=params,timeout=15).json()
-        if "Time Series (Daily)" in r:
-            status["alpha_vantage"]["working"]=True
-            status["alpha_vantage"]["message"]="✅ Alpha Vantage is working"
-        elif "Error Message" in r:
-            status["alpha_vantage"]["message"]=f"❌ {r['Error Message']}"
-        else:
-            status["alpha_vantage"]["message"]="⚠️ Rate-limited?"
-    except Exception as e:
-        status["alpha_vantage"]["message"]=f"❌ AV error: {e}"
-    return status
-
-# --------------------- helper: days for period -------------------- #
-PERIOD_DAYS={"1mo":30,"3mo":90,"6mo":180,"1y":365,"2y":730,"5y":1825}
-
-def get_period_days(period:str)->int:
-    return PERIOD_DAYS.get(period,365)
-
-# ------------------------- Fetch data ----------------------------- #
-@st.cache_data(ttl=300)
-def fetch_stock_data(ticker:str,period:str):
-    try:
-        av_symbol=normalize_symbol_for_alpha_vantage(ticker)
-        time.sleep(1)   # respect free-tier rate limit
-        params={"function":"TIME_SERIES_DAILY","symbol":av_symbol,
-                "apikey":ALPHA_VANTAGE_API_KEY,"outputsize":"full"}
-        data=requests.get(AV_BASE_URL,params=params,timeout=30).json()
-        if "Time Series (Daily)" not in data:
-            raise ValueError(data.get("Error Message","Unknown AV error"))
-        df=pd.DataFrame.from_dict(data["Time Series (Daily)"],orient="index")
-        df=df.rename(columns={"1. open":"Open","2. high":"High","3. low":"Low",
-                              "4. close":"Close","5. volume":"Volume"}).astype(float)
-        df.index=pd.to_datetime(df.index)
-        df=df.sort_index().reset_index().rename(columns={"index":"Date"})
-        cutoff=datetime.now()-timedelta(days=get_period_days(period))
-        df=df[df["Date"]>=cutoff]
-        df.attrs={"source":"alpha_vantage"}
+        av_symbol = normalize_symbol(symbol)
+        time.sleep(1)   # free-tier polite delay
+        params = {"function":"TIME_SERIES_DAILY","symbol":av_symbol,
+                  "outputsize":"full","apikey":ALPHA_VANTAGE_API_KEY}
+        r = requests.get(AV_BASE_URL, params=params, timeout=25).json()
+        if "Time Series (Daily)" not in r:  raise ValueError("Alpha Vantage error")
+        df = pd.DataFrame(r["Time Series (Daily)"]).T.rename(columns={
+            "1. open":"Open","2. high":"High","3. low":"Low","4. close":"Close","5. volume":"Volume"
+        }).astype(float)
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index().reset_index().rename(columns={"index":"Date"})
+        cutoff = datetime.now() - timedelta(days=PERIOD_DAYS[period])
+        df = df[df["Date"] >= cutoff]
+        df.attrs["source"] = "alpha"
         return df
     except Exception as e:
-        st.warning(f"Alpha Vantage error ➜ using sample data ({e})")
-        return generate_sample_data(ticker,period)
+        st.warning(f"Live feed failed ({e}) — using sample data.")
+        return sample_data(symbol, period)
 
-# ----------------------- Sample data (fallback) ------------------- #
-def generate_sample_data(ticker,period):
-    days=get_period_days(period)
-    base=100
-    np.random.seed(hash(ticker)%2**32)
-    dates=pd.date_range(end=datetime.now(),periods=days,freq="B")
-    returns=np.random.normal(0.08/252,0.02,days)
-    prices=[base]
-    for r in returns[1:]:
-        prices.append(prices[-1]*(1+r))
-    df=pd.DataFrame({"Date":dates,"Close":prices})
+def sample_data(symbol:str,period:str)->pd.DataFrame:
+    days = PERIOD_DAYS[period]
+    rng = pd.date_range(end=datetime.now(), periods=days, freq="B")
+    base = random.uniform(50,300)
+    prices = np.maximum(base*np.cumprod(1+np.random.normal(0,0.02,len(rng))),1)
+    df = pd.DataFrame({"Date":rng,"Close":prices})
     df["Open"]=df["High"]=df["Low"]=df["Close"]
-    df["Volume"]=np.random.randint(100000,300000,size=len(df))
-    df.attrs={"source":"sample"}
+    df["Volume"] = np.random.randint(100_000,500_000,size=len(rng))
+    df.attrs["source"] = "sample"
     return df
 
-# ------------------------- Indicators etc. ------------------------ #
-def add_indicators(df):
-    df["MA20"]=df["Close"].rolling(20).mean()
-    df["MA50"]=df["Close"].rolling(50).mean()
-    delta=df["Close"].diff()
-    gain=(delta.clip(lower=0)).rolling(14).mean()
-    loss=(-delta.clip(upper=0)).rolling(14).mean()
-    rs=gain/loss
-    df["RSI"]=100-100/(1+rs)
-    for i in [1,2,3,5]:
-        df[f"Close_Lag{i}"]=df["Close"].shift(i)
+def add_indicators(df:pd.DataFrame)->pd.DataFrame:
+    if len(df) < 55:   # not enough for MA50
+        return pd.DataFrame()    # will be handled later
+    df["MA20"] = df["Close"].rolling(20).mean()
+    df["MA50"] = df["Close"].rolling(50).mean()
+    # RSI
+    delta = df["Close"].diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / loss
+    df["RSI"] = 100 - 100/(1+rs)
+    for lag in [1,2,3,5]:
+        df[f"CloseLag{lag}"] = df["Close"].shift(lag)
     return df.dropna()
 
-# ------------------------- ML helpers ----------------------------- #
-def prepare_Xy(df):
-    features=[c for c in ["Open","High","Low","Volume",
-                          "MA20","MA50","RSI",
-                          "Close_Lag1","Close_Lag2","Close_Lag3","Close_Lag5"]
-              if c in df.columns]
-    X=df[features]; y=df["Close"]
-    return X,y,features
+def train_model(df:pd.DataFrame):
+    feature_cols = ["Open","High","Low","Volume","MA20","MA50","RSI",
+                    "CloseLag1","CloseLag2","CloseLag3","CloseLag5"]
+    X = df[feature_cols]; y = df["Close"]
+    if len(df) < 80:         # not enough rows for split
+        return None,None,None,None
+    X_train,X_test,y_train,y_test = train_test_split(
+        X, y, test_size=0.2, shuffle=False
+    )
+    scaler = StandardScaler().fit(X_train)
+    model = RandomForestRegressor(n_estimators=200,max_depth=12,n_jobs=-1,random_state=42)
+    model.fit(scaler.transform(X_train), y_train)
+    y_pred = model.predict(scaler.transform(X_test))
+    metrics = {"R2":r2_score(y_test,y_pred),
+               "RMSE":np.sqrt(mean_squared_error(y_test,y_pred)),
+               "MAE":mean_absolute_error(y_test,y_pred)}
+    importance = pd.Series(model.feature_importances_,index=feature_cols)\
+                  .sort_values(ascending=False)
+    return model, scaler, metrics, importance
 
-def train_rf(df):
-    X,y,features=prepare_Xy(df)
-    Xtrain,Xtest,ytrain,ytest=train_test_split(X,y,test_size=.2,shuffle=False)
-    scaler=StandardScaler().fit(Xtrain)
-    Xtr=scaler.transform(Xtrain); Xte=scaler.transform(Xtest)
-    model=RandomForestRegressor(n_estimators=200,max_depth=12,n_jobs=-1).fit(Xtr,ytrain)
-    metrics={"R2":r2_score(ytest,model.predict(Xte)),
-             "RMSE":np.sqrt(mean_squared_error(ytest,model.predict(Xte)))}
-    importances=pd.Series(model.feature_importances_,index=features)\
-                 .sort_values(ascending=False)
-    return model,scaler,metrics,importances
-
-# ------------------------------------------------------------------ #
-# ----------------------------  UI  -------------------------------- #
-# ------------------------------------------------------------------ #
-st.markdown('<h1 class="main-header">US StockAI Predictor Pro 🇺🇸</h1>',unsafe_allow_html=True)
-st.markdown('<p class="subtitle">US Market analysis & AI-powered prediction</p>',unsafe_allow_html=True)
+# ──────────────────────────────────────────────────────────────────────────────
+#  UI  (sidebar controls)
+# ──────────────────────────────────────────────────────────────────────────────
+st.markdown('<h1 class="main-header">US StockAI Predictor Pro</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">AI-powered next-day US-stock prediction</p>', unsafe_allow_html=True)
 st.markdown('<div class="welcome-banner">WELCOME to the STOCKS world</div>',unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("#### 🇺🇸 Platform Status")
+    st.markdown("### Configuration")
     st.markdown('<div class="us-badge">US Market Mode Enabled</div>',unsafe_allow_html=True)
-
-    choice=st.selectbox("Pick a stock list",["US Presets","Custom"])
-    if choice=="US Presets":
-        ticker=st.selectbox("Symbol",list(RELIABLE_TICKERS_US))
+    method = st.radio("Choose symbol source", ["Preset list","Manual"])
+    if method=="Preset list":
+        symbol = st.selectbox("Pick symbol", list(RELIABLE_TICKERS_US))
     else:
-        ticker=st.text_input("Enter ticker (e.g. AAPL, BRK-B)","AAPL")
-    period=st.selectbox("Period",["1mo","3mo","6mo","1y","2y","5y"],index=3)
-    if st.button("🚀 Predict"):
+        symbol = st.text_input("Enter ticker (US)", "AAPL")
+    period = st.selectbox("History window", list(PERIOD_DAYS.keys()), index=3)
+    if st.button("🔍 Analyze & Predict"):
         run=True
     else:
         run=False
 
-# ------------------------------------------------------------------ #
+# ──────────────────────────────────────────────────────────────────────────────
 if run:
-    data=fetch_stock_data(ticker,period)
-    data=add_indicators(data)
-    src=data.attrs["source"]
-    st.write(f"Data source: **{src}** · Rows: {len(data)}")
-    model,scaler,metrics,imp=train_rf(data)
-    pred= model.predict(scaler.transform(prepare_Xy(data)[0].iloc[[-1]]))[0]
-    current=data["Close"].iloc[-1]
-    delta=pred-current; pct=delta/current*100
-    st.metric("Current",f"${current:.2f}")
-    st.metric("Next-day pred",f"${pred:.2f}",f"{pct:+.2f}%")
-    st.write("Model R²",f"{metrics['R2']:.3f}  |  RMSE {metrics['RMSE']:.2f}")
-    st.bar_chart(imp.head(10))
+    df_raw = fetch_data(symbol,period)
+    df = add_indicators(df_raw.copy())
 
-# --------------- optional API status panel ------------------------ #
-with st.expander("API status"):
-    if st.button("Test now"):
-        st.json(test_api_connections())
-# ------------------------------------------------------------------ #
+    if df.empty:
+        st.error("Not enough historical rows to compute indicators. "
+                 "Choose a longer period (≥ 6 mo).")
+        st.stop()
+
+    src = df_raw.attrs["source"]
+    st.success(f"Loaded {len(df)} rows · source: {src}")
+
+    model,scaler,metrics,importance = train_model(df)
+    if model is None:
+        st.error("Insufficient rows to train model (need ≥ 80).")
+        st.stop()
+
+    latest_X = scaler.transform(df[importance.index].iloc[[-1]])
+    pred = float(model.predict(latest_X)[0])
+    current = float(df["Close"].iloc[-1])
+    delta = pred-current; pct = delta/current*100
+
+    c1,c2 = st.columns(2)
+    with c1:
+        st.metric("Current", f"${current:.2f}")
+    with c2:
+        st.metric("Next-day prediction", f"${pred:.2f}", f"{pct:+.2f}%")
+
+    st.write("Model R²", f"{metrics['R2']:.3f}   |   RMSE {metrics['RMSE']:.2f}")
+
+    # price chart
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df["Date"],y=df["Close"],mode="lines",name="Close"))
+    fig.add_trace(go.Scatter(x=df["Date"],y=df["MA20"],mode="lines",name="MA20"))
+    fig.add_trace(go.Scatter(x=df["Date"],y=df["MA50"],mode="lines",name="MA50"))
+    fig.update_layout(height=400,template="plotly_white")
+    st.plotly_chart(fig,use_container_width=True)
+
+    st.subheader("Feature importance")
+    st.bar_chart(importance.head(8))
+
+    st.subheader("Raw data (last 40)")
+    st.dataframe(df.tail(40),use_container_width=True)
+
+else:
+    st.info("Select a symbol & click **Analyze & Predict**")
+
+# ──────────────────────────────────────────────────────────────────────────────

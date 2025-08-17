@@ -1,17 +1,3 @@
-Of course. Here is the full, working `app.py` code that revamps the UI to closely match the `investing.com` style you provided, includes the requested stock selection dropdown, and ensures all previous functionality and error handling are preserved.
-
-The new UI features:
-*   A clean, centered layout with styled tables for indices and active stocks.
-*   Custom colors for positive (green) and negative (red) stock changes.
-*   A dropdown menu in the sidebar to select from a preset list of popular stocks.
-*   The "Welcome" message for the logged-in user remains in the top right.
-*   All model prediction logic is integrated into the new design.
-
-Your `runtime.txt` and `requirements.txt` files do **not** need to be changed. Simply replace your existing `app.py` with the code below.
-
-### Full `app.py` Code
-
-```python
 import os
 import time
 import json
@@ -71,15 +57,13 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-    body {
+    body, .stApp {
         font-family: 'Roboto', sans-serif;
-        background-color: #F2F2F2;
+        background-color: #FFFFFF;
     }
     .main-container {
-        background-color: #FFFFFF;
-        padding: 2rem;
+        padding: 1rem 2rem;
         border-radius: 10px;
-        border: 1px solid #E6E6E6;
         max-width: 1200px;
         margin: auto;
     }
@@ -119,18 +103,6 @@ st.markdown("""
     }
     .positive { color: #008000; }
     .negative { color: #D90000; }
-    .market-bar {
-        height: 10px;
-        width: 100px;
-        background-color: #EFEFEF;
-        border-radius: 5px;
-        display: inline-block;
-        position: relative;
-    }
-    .market-bar-inner {
-        height: 100%;
-        border-radius: 5px;
-    }
     .greet-badge {
       position: fixed; top: 15px; right: 25px; z-index: 1000;
       background: #FFFFFF; border: 1px solid #DDD;
@@ -174,6 +146,7 @@ def fetch_history(sym: str, period: str) -> pd.DataFrame:
         df = pd.DataFrame({"Date": dates, "Close": prices})
         for col in ["Open", "High", "Low"]: df[col] = df["Close"]
         df["Volume"] = np.random.randint(100_000, 400_000, len(dates))
+        st.warning(f"Could not fetch live data for {sym}. Displaying sample data instead.")
         return df
 
 def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
@@ -206,16 +179,17 @@ def train_model(df: pd.DataFrame):
 if "username" not in st.session_state:
     username = "Guest"
     try:
+        # This works on Streamlit Community Cloud & versions >= 1.14
         user_obj = st.experimental_user
-        if user_obj:
-            name = getattr(user_obj, "name", None)
-            email = getattr(user_obj, "email", None)
-            if name:
-                username = name
-            elif email:
-                username = email.split("@")[0]
-    except AttributeError:
-        pass # Not on Streamlit Cloud or older version
+        name = getattr(user_obj, "name", None)
+        email = getattr(user_obj, "email", None)
+        if name:
+            username = name
+        elif email:
+            username = email.split("@")[0]
+    except (AttributeError, Exception):
+        # Fallback for local development or older versions
+        pass
     st.session_state.username = username.title()
 
 st.markdown(f'<div class="greet-badge">Welcome, {st.session_state.username}</div>', unsafe_allow_html=True)
@@ -226,10 +200,10 @@ st.markdown(f'<div class="greet-badge">Welcome, {st.session_state.username}</div
 with st.sidebar:
     st.header("Prediction Parameters")
     
-    # New Dropdown for stock selection
     selected_stock_name = st.selectbox(
         "Select a Stock",
-        options=list(PRESET_TICKERS.keys())
+        options=list(PRESET_TICKERS.keys()),
+        index=0 # Default to the first stock in the list
     )
     ticker = PRESET_TICKERS[selected_stock_name]
     
@@ -267,7 +241,7 @@ if run:
         else:
             model_data = train_model(proc)
             if model_data is None:
-                st.error("Not enough data to train the model. A minimum of ~80 data points is required.")
+                st.error("Not enough data to train the model. A minimum of ~80 data points is required after processing.")
             else:
                 model, scaler, metrics, feats = model_data
                 latest_pred = float(model.predict(scaler.transform(proc[feats].iloc[[-1]]))[0])
@@ -292,4 +266,3 @@ else:
     st.info("Select a stock and click 'Predict Stock Price' in the sidebar to begin.")
 
 st.markdown('</div>', unsafe_allow_html=True)
-```

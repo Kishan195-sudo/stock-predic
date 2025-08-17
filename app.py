@@ -55,7 +55,7 @@ st.markdown(
       background:rgba(11,83,148,.12); border:1px solid rgba(11,83,148,.25);
       padding:6px 14px; border-radius:9px; font-weight:600;
     }
-    /* ticker watermark */
+    /* ticker canvas */
     #tickerCanvas {position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.06;}
     </style>
 
@@ -67,15 +67,15 @@ st.markdown(
     const ctx  = cvs.getContext('2d');
     function fit(){cvs.width=innerWidth; cvs.height=innerHeight;}
     addEventListener('resize',fit); fit();
-    const tickers = """ + ticker_string + """;
-    let quotes = tickers.map(t=>({sym:t, px:(Math.random()*300+50).toFixed(2),
+    const tickers=""" + ticker_string + """;
+    let quotes=tickers.map(t=>({sym:t, px:(Math.random()*300+50).toFixed(2),
                                   x:Math.random()*innerWidth,
                                   y:Math.random()*innerHeight}));
     function loop(){
       ctx.clearRect(0,0,cvs.width,cvs.height);
       ctx.font='bold 26px Inter'; ctx.fillStyle='#0b5394';
       quotes.forEach(q=>{
-        q.x -= 0.6;
+        q.x -= 0.5;
         if(q.x < -160){
            q.x = cvs.width + Math.random()*200;
            q.y = Math.random()*cvs.height;
@@ -177,19 +177,23 @@ def train_model(df: pd.DataFrame):
 
 # ───────────────────────  user name handling  ───────────────────── #
 if "username" not in st.session_state:
-    # Streamlit Cloud: experimental_user gives auth details
+    username = None
     try:
-        u = st.experimental_user
+        user_obj = st.experimental_user  # available on Streamlit Cloud
     except AttributeError:
-        u = None
+        user_obj = None
 
-    if u and (u.name or u.email):
-        st.session_state.username = (u.name or u.email.split("@")[0]).title()
-    else:
+    if user_obj:
+        username = getattr(user_obj, "name", None)
+        if not username:
+            email = getattr(user_obj, "email", None)
+            if email:
+                username = email.split("@")[0]
+    if not username:
         with st.sidebar:
-            st.session_state.username = st.text_input("Enter your name", "Guest")
+            username = st.text_input("Enter your name", "Guest")
+    st.session_state.username = username.title()
 
-# inject name into greeting badge via JS (no % / {} conflicts)
 st.markdown(
     "<script>document.getElementById('greeting').innerText = "
     f"'Welcome {st.session_state.username}';</script>",

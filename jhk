@@ -1,0 +1,911 @@
+Using uv pip install.
+
+Using Python 3.13.5 environment at /home/adminuser/venv
+
+Resolved 75 packages in 1.83s
+
+  × Failed to download and build `numpy==1.24.3`
+
+  ├─▶ Build backend failed to determine requirements with `build_wheel()`
+
+  │   (exit status: 1)
+
+
+  │   [stderr]
+
+  │   Traceback (most recent call last):
+
+  │     File "<string>", line 8, in <module>
+
+  │       from setuptools.build_meta import __legacy__ as backend
+
+  │     File
+
+  │   "/home/adminuser/.cache/uv/builds-v0/.tmpwdrpgW/lib/python3.13/site-packages/setuptools/__init__.py",
+
+  │   line 10, in <module>
+
+  │       import distutils.core
+
+  │   ModuleNotFoundError: No module named 'distutils'
+
+
+  ╰─▶ distutils was removed from the standard library in Python 3.12. Consider
+
+      adding a constraint (like `numpy >1.24.3`) to avoid building a version
+
+      of numpy that depends on distutils.
+
+Checking if Streamlit is installed
+
+Installing rich for an improved exception logging
+
+Using uv pip install.
+
+Using Python 3.13.5 environment at /home/adminuser/venv
+
+Resolved 4 packages in 47ms
+
+Prepared 1 package in 37ms
+
+Installed 4 packages in 13ms
+
+ + markdown-it-py==4.0.0[2025-08-16 16:55:36.073988] 
+
+ + mdurl==0.1.2
+
+ + pygments==2.19.2
+
+ + rich==14.1.0
+
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+──────────────────────────────────────── pip ───────────────────────────────────────────
+
+
+Using standard pip install.
+
+Collecting streamlit==1.28.1 (from -r /mount/src/stock-predic/requirements.txt (line 1))
+
+  Downloading streamlit-1.28.1-py2.py3-none-any.whl.metadata (8.1 kB)
+
+Collecting pandas==2.0.3 (from -r /mount/src/stock-predic/requirements.txt (line 2))
+
+  Downloading pandas-2.0.3.tar.gz (5.3 MB)
+
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.3/5.3 MB 64.6 MB/s eta 0:00:00[2025-08-16 16:55:38.562316] 
+
+  Installing build dependencies: started
+
+  Installing build dependencies: finished with status 'done'
+
+  Getting requirements to build wheel: started
+
+  Getting requirements to build wheel: still running...
+
+  Getting requirements to build wheel: finished with status 'done'
+
+  Preparing metadata (pyproject.toml): started
+
+  Preparing metadata (pyproject.toml): finished with status 'done'
+
+Collecting numpy==1.24.3 (from -r /mount/src/stock-predic/requirements.txt (line 3))
+
+  Downloading numpy-1.24.3.tar.gz (10.9 MB)
+
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.9/10.9 MB 182.3 MB/s eta 0:00:00[2025-08-16 16:57:48.968406] 
+
+  Installing build dependencies: started
+
+  Installing build dependencies: finished with status 'done'
+
+  Getting requirements to build wheel: started
+
+  Getting requirements to build wheel: finished with status 'done'
+
+ERROR: Exception:
+
+Traceback (most recent call last):
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/cli/base_command.py", line 180, in exc_logging_wrapper
+
+    status = run_func(*args)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/cli/req_command.py", line 245, in wrapper
+
+    return func(self, options, args)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/commands/install.py", line 377, in run
+
+    requirement_set = resolver.resolve(
+
+        reqs, check_supported_wheels=not options.target_dir
+
+    )
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/resolver.py", line 95, in resolve
+
+    result = self._result = resolver.resolve(
+
+                            ~~~~~~~~~~~~~~~~^
+
+        collected.requirements, max_rounds=limit_how_complex_resolution_can_be
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/resolvers.py", line 546, in resolve
+
+    state = resolution.resolve(requirements, max_rounds=max_rounds)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/resolvers.py", line 397, in resolve
+
+    self._add_to_criteria(self.state.criteria, r, parent=None)
+
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/resolvers.py", line 173, in _add_to_criteria
+
+    if not criterion.candidates:
+
+           ^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/structs.py", line 156, in __bool__
+
+    return bool(self._sequence)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/found_candidates.py", line 155, in __bool__
+
+    return any(self)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/found_candidates.py", line 143, in <genexpr>
+
+    return (c for c in iterator if id(c) not in self._incompatible_ids)
+
+                       ^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/found_candidates.py", line 47, in _iter_built
+
+    candidate = func()
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 182, in _make_candidate_from_link
+
+    base: Optional[BaseCandidate] = self._make_base_candidate_from_link(
+
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+
+        link, template, name, version
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 228, in _make_base_candidate_from_link
+
+    self._link_candidate_cache[link] = LinkCandidate(
+
+                                       ~~~~~~~~~~~~~^
+
+        link,
+
+        ^^^^^
+
+    ...<3 lines>...
+
+        version=version,
+
+        ^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 290, in __init__
+
+    super().__init__(
+
+    ~~~~~~~~~~~~~~~~^
+
+        link=link,
+
+        ^^^^^^^^^^
+
+    ...<4 lines>...
+
+        version=version,
+
+        ^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 156, in __init__
+
+    self.dist = self._prepare()
+
+                ~~~~~~~~~~~~~^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 222, in _prepare
+
+    dist = self._prepare_distribution()
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 301, in _prepare_distribution
+
+    return preparer.prepare_linked_requirement(self._ireq, parallel_builds=True)
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 525, in prepare_linked_requirement
+
+    return self._prepare_linked_requirement(req, parallel_builds)
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 640, in _prepare_linked_requirement
+
+    dist = _get_prepared_distribution(
+
+        req,
+
+    ...<3 lines>...
+
+        self.check_build_deps,
+
+    )
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 71, in _get_prepared_distribution
+
+    abstract_dist.prepare_distribution_metadata(
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+
+        finder, build_isolation, check_build_deps
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 54, in prepare_distribution_metadata
+
+    self._install_build_reqs(finder)
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 124, in _install_build_reqs
+
+    build_reqs = self._get_build_requires_wheel()
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 101, in _get_build_requires_wheel
+
+    return backend.get_requires_for_build_wheel()
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/utils/misc.py", line 745, in get_requires_for_build_wheel
+
+    return super().get_requires_for_build_wheel(config_settings=cs)
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 166, in get_requires_for_build_wheel
+
+    return self._call_hook('get_requires_for_build_wheel', {
+
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        'config_settings': config_settings
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    })
+
+    ^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 321, in _call_hook
+
+    raise BackendUnavailable(data.get('traceback', ''))
+
+pip._vendor.pyproject_hooks._impl.BackendUnavailable: Traceback (most recent call last):
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 77, in _build_backend
+
+    obj = import_module(mod_path)
+
+  File "/usr/local/lib/python3.13/importlib/__init__.py", line 88, in import_module
+
+    return _bootstrap._gcd_import(name[level:], package, level)
+
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+
+  File "/tmp/pip-build-env-uyqfe51m/overlay/lib/python3.13/site-packages/setuptools/__init__.py", line 10, in <module>
+
+    import distutils.core
+
+ModuleNotFoundError: No module named 'distutils'
+
+
+
+[notice] A new release of pip is available: 24.0 -> 25.2
+
+[notice] To update, run: pip install --upgrade pip
+
+Checking if Streamlit is installed
+
+Installing rich for an improved exception logging
+
+Using standard pip install.
+
+Collecting rich>=10.14.0
+
+  Downloading rich-14.1.0-py3-none-any.whl.metadata (18 kB)
+
+Collecting markdown-it-py>=2.2.0 (from rich>=10.14.0)
+
+  Downloading markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+
+Collecting pygments<3.0.0,>=2.13.0 (from rich>=10.14.0)
+
+  Downloading pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=10.14.0)
+
+  Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+
+Downloading rich-14.1.0-py3-none-any.whl (243 kB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 243.4/243.4 kB 14.8 MB/s eta 0:00:00[2025-08-16 16:57:55.058397] 
+
+Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.3/87.3 kB 122.7 MB/s eta 0:00:00[2025-08-16 16:57:55.072824] 
+
+Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 74.6 MB/s eta 0:00:00[2025-08-16 16:57:55.102601] 
+
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+
+Installing collected packages: pygments, mdurl, markdown-it-py, rich
+
+  Attempting uninstall: pygments
+
+    Found existing installation: Pygments 2.19.2
+
+    Uninstalling Pygments-2.19.2:
+
+      Successfully uninstalled Pygments-2.19.2
+
+  Attempting uninstall: mdurl
+
+    Found existing installation: mdurl 0.1.2
+
+    Uninstalling mdurl-0.1.2:
+
+      Successfully uninstalled mdurl-0.1.2
+
+  Attempting uninstall: markdown-it-py
+
+    Found existing installation: markdown-it-py 4.0.0
+
+    Uninstalling markdown-it-py-4.0.0:
+
+      Successfully uninstalled markdown-it-py-4.0.0
+
+  Attempting uninstall: rich
+
+    Found existing installation: rich 14.1.0
+
+    Uninstalling rich-14.1.0:
+
+      Successfully uninstalled rich-14.1.0
+
+Successfully installed markdown-it-py-4.0.0 mdurl-0.1.2 pygments-2.19.2 rich-14.1.0
+
+
+[notice] A new release of pip is available: 24.0 -> 25.2
+
+[notice] To update, run: pip install --upgrade pip
+
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+
+[16:57:57] ❗️ installer returned a non-zero exit code
+
+[16:57:57] ❗️ Error during processing dependencies! Please fix the error and push an update, or try restarting the app.
+
+[16:55:28] 🚀 Starting up repository: 'stock-predic', branch: 'main', main module: 'app.py'
+
+[16:55:28] 🐙 Cloning repository...
+
+[16:55:28] 🐙 Cloning into '/mount/src/stock-predic'...
+
+[16:55:28] 🐙 Cloned repository!
+
+[16:55:28] 🐙 Pulling code changes from Github...
+
+[16:55:29] 📦 Processing dependencies...
+
+
+──────────────────────────────────────── uv ───────────────────────────────────────────
+
+
+Using uv pip install.
+
+Using Python 3.13.5 environment at /home/adminuser/venv
+
+Resolved 75 packages in 1.83s
+
+  × Failed to download and build `numpy==1.24.3`
+
+  ├─▶ Build backend failed to determine requirements with `build_wheel()`
+
+  │   (exit status: 1)
+
+
+  │   [stderr]
+
+  │   Traceback (most recent call last):
+
+  │     File "<string>", line 8, in <module>
+
+  │       from setuptools.build_meta import __legacy__ as backend
+
+  │     File
+
+  │   "/home/adminuser/.cache/uv/builds-v0/.tmpwdrpgW/lib/python3.13/site-packages/setuptools/__init__.py",
+
+  │   line 10, in <module>
+
+  │       import distutils.core
+
+  │   ModuleNotFoundError: No module named 'distutils'
+
+
+  ╰─▶ distutils was removed from the standard library in Python 3.12. Consider
+
+      adding a constraint (like `numpy >1.24.3`) to avoid building a version
+
+      of numpy that depends on distutils.
+
+Checking if Streamlit is installed
+
+Installing rich for an improved exception logging
+
+Using uv pip install.
+
+Using Python 3.13.5 environment at /home/adminuser/venv
+
+Resolved 4 packages in 47ms
+
+Prepared 1 package in 37ms
+
+Installed 4 packages in 13ms
+
+ + markdown-it-py==4.0.0[2025-08-16 16:55:36.073988] 
+
+ + mdurl==0.1.2
+
+ + pygments==2.19.2
+
+ + rich==14.1.0
+
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+──────────────────────────────────────── pip ───────────────────────────────────────────
+
+
+Using standard pip install.
+
+Collecting streamlit==1.28.1 (from -r /mount/src/stock-predic/requirements.txt (line 1))
+
+  Downloading streamlit-1.28.1-py2.py3-none-any.whl.metadata (8.1 kB)
+
+Collecting pandas==2.0.3 (from -r /mount/src/stock-predic/requirements.txt (line 2))
+
+  Downloading pandas-2.0.3.tar.gz (5.3 MB)
+
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.3/5.3 MB 64.6 MB/s eta 0:00:00[2025-08-16 16:55:38.562316] 
+
+  Installing build dependencies: started
+
+  Installing build dependencies: finished with status 'done'
+
+  Getting requirements to build wheel: started
+
+  Getting requirements to build wheel: still running...
+
+  Getting requirements to build wheel: finished with status 'done'
+
+  Preparing metadata (pyproject.toml): started
+
+  Preparing metadata (pyproject.toml): finished with status 'done'
+
+Collecting numpy==1.24.3 (from -r /mount/src/stock-predic/requirements.txt (line 3))
+
+  Downloading numpy-1.24.3.tar.gz (10.9 MB)
+
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.9/10.9 MB 182.3 MB/s eta 0:00:00[2025-08-16 16:57:48.968406] 
+
+  Installing build dependencies: started
+
+  Installing build dependencies: finished with status 'done'
+
+  Getting requirements to build wheel: started
+
+  Getting requirements to build wheel: finished with status 'done'
+
+ERROR: Exception:
+
+Traceback (most recent call last):
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/cli/base_command.py", line 180, in exc_logging_wrapper
+
+    status = run_func(*args)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/cli/req_command.py", line 245, in wrapper
+
+    return func(self, options, args)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/commands/install.py", line 377, in run
+
+    requirement_set = resolver.resolve(
+
+        reqs, check_supported_wheels=not options.target_dir
+
+    )
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/resolver.py", line 95, in resolve
+
+    result = self._result = resolver.resolve(
+
+                            ~~~~~~~~~~~~~~~~^
+
+        collected.requirements, max_rounds=limit_how_complex_resolution_can_be
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/resolvers.py", line 546, in resolve
+
+    state = resolution.resolve(requirements, max_rounds=max_rounds)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/resolvers.py", line 397, in resolve
+
+    self._add_to_criteria(self.state.criteria, r, parent=None)
+
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/resolvers.py", line 173, in _add_to_criteria
+
+    if not criterion.candidates:
+
+           ^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/resolvelib/structs.py", line 156, in __bool__
+
+    return bool(self._sequence)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/found_candidates.py", line 155, in __bool__
+
+    return any(self)
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/found_candidates.py", line 143, in <genexpr>
+
+    return (c for c in iterator if id(c) not in self._incompatible_ids)
+
+                       ^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/found_candidates.py", line 47, in _iter_built
+
+    candidate = func()
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 182, in _make_candidate_from_link
+
+    base: Optional[BaseCandidate] = self._make_base_candidate_from_link(
+
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+
+        link, template, name, version
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/factory.py", line 228, in _make_base_candidate_from_link
+
+    self._link_candidate_cache[link] = LinkCandidate(
+
+                                       ~~~~~~~~~~~~~^
+
+        link,
+
+        ^^^^^
+
+    ...<3 lines>...
+
+        version=version,
+
+        ^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 290, in __init__
+
+    super().__init__(
+
+    ~~~~~~~~~~~~~~~~^
+
+        link=link,
+
+        ^^^^^^^^^^
+
+    ...<4 lines>...
+
+        version=version,
+
+        ^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 156, in __init__
+
+    self.dist = self._prepare()
+
+                ~~~~~~~~~~~~~^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 222, in _prepare
+
+    dist = self._prepare_distribution()
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/resolution/resolvelib/candidates.py", line 301, in _prepare_distribution
+
+    return preparer.prepare_linked_requirement(self._ireq, parallel_builds=True)
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 525, in prepare_linked_requirement
+
+    return self._prepare_linked_requirement(req, parallel_builds)
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 640, in _prepare_linked_requirement
+
+    dist = _get_prepared_distribution(
+
+        req,
+
+    ...<3 lines>...
+
+        self.check_build_deps,
+
+    )
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/operations/prepare.py", line 71, in _get_prepared_distribution
+
+    abstract_dist.prepare_distribution_metadata(
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+
+        finder, build_isolation, check_build_deps
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    )
+
+    ^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 54, in prepare_distribution_metadata
+
+    self._install_build_reqs(finder)
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 124, in _install_build_reqs
+
+    build_reqs = self._get_build_requires_wheel()
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/distributions/sdist.py", line 101, in _get_build_requires_wheel
+
+    return backend.get_requires_for_build_wheel()
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_internal/utils/misc.py", line 745, in get_requires_for_build_wheel
+
+    return super().get_requires_for_build_wheel(config_settings=cs)
+
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 166, in get_requires_for_build_wheel
+
+    return self._call_hook('get_requires_for_build_wheel', {
+
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        'config_settings': config_settings
+
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    })
+
+    ^^
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_impl.py", line 321, in _call_hook
+
+    raise BackendUnavailable(data.get('traceback', ''))
+
+pip._vendor.pyproject_hooks._impl.BackendUnavailable: Traceback (most recent call last):
+
+  File "/home/adminuser/venv/lib/python3.13/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 77, in _build_backend
+
+    obj = import_module(mod_path)
+
+  File "/usr/local/lib/python3.13/importlib/__init__.py", line 88, in import_module
+
+    return _bootstrap._gcd_import(name[level:], package, level)
+
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+
+  File "/tmp/pip-build-env-uyqfe51m/overlay/lib/python3.13/site-packages/setuptools/__init__.py", line 10, in <module>
+
+    import distutils.core
+
+ModuleNotFoundError: No module named 'distutils'
+
+
+
+[notice] A new release of pip is available: 24.0 -> 25.2
+
+[notice] To update, run: pip install --upgrade pip
+
+Checking if Streamlit is installed
+
+Installing rich for an improved exception logging
+
+Using standard pip install.
+
+Collecting rich>=10.14.0
+
+  Downloading rich-14.1.0-py3-none-any.whl.metadata (18 kB)
+
+Collecting markdown-it-py>=2.2.0 (from rich>=10.14.0)
+
+  Downloading markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+
+Collecting pygments<3.0.0,>=2.13.0 (from rich>=10.14.0)
+
+  Downloading pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=10.14.0)
+
+  Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+
+Downloading rich-14.1.0-py3-none-any.whl (243 kB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 243.4/243.4 kB 14.8 MB/s eta 0:00:00[2025-08-16 16:57:55.058397] 
+
+Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.3/87.3 kB 122.7 MB/s eta 0:00:00[2025-08-16 16:57:55.072824] 
+
+Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 74.6 MB/s eta 0:00:00[2025-08-16 16:57:55.102601] 
+
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+
+Installing collected packages: pygments, mdurl, markdown-it-py, rich
+
+  Attempting uninstall: pygments
+
+    Found existing installation: Pygments 2.19.2
+
+    Uninstalling Pygments-2.19.2:
+
+      Successfully uninstalled Pygments-2.19.2
+
+  Attempting uninstall: mdurl
+
+    Found existing installation: mdurl 0.1.2
+
+    Uninstalling mdurl-0.1.2:
+
+      Successfully uninstalled mdurl-0.1.2
+
+  Attempting uninstall: markdown-it-py
+
+    Found existing installation: markdown-it-py 4.0.0
+
+    Uninstalling markdown-it-py-4.0.0:
+
+      Successfully uninstalled markdown-it-py-4.0.0
+
+  Attempting uninstall: rich
+
+    Found existing installation: rich 14.1.0
+
+    Uninstalling rich-14.1.0:
+
+      Successfully uninstalled rich-14.1.0
+
+Successfully installed markdown-it-py-4.0.0 mdurl-0.1.2 pygments-2.19.2 rich-14.1.0
+
+
+[notice] A new release of pip is available: 24.0 -> 25.2
+
+[notice] To update, run: pip install --upgrade pip
+
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+
+[16:57:57] ❗️ installer returned a non-zero exit code
+
+[16:57:57] ❗️ Error during processing dependencies! Please fix the error and push an update, or try restarting the app.
+
+main

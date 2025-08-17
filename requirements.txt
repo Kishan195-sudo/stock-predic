@@ -2,7 +2,7 @@ streamlit==1.36.0
 pandas==2.2.2
 numpy==1.26.4
 scipy==1.11.4
-scikit-learn==1.4.2       # 1.4.x has wheels for Py 3.11
+scikit-learn==1.4.2
 plotly==5.22.0
 requests==2.31.0
 yfinance==0.2.43

@@ -1,4 +1,0 @@
-File "/mount/src/stock-predic/app.py", line 1
-  Of course. Here is the full, working `app.py` code that revamps the UI to closely match the `investing.com` style you provided, includes the requested stock selection dropdown, and ensures all previous functionality and error handling are preserved.
-     ^
-SyntaxError: invalid syntax
